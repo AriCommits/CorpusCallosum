@@ -22,7 +22,7 @@ retrieval:
   rrf_k: 60
 
 server:
-  host: 0.0.0.0
+  host: 127.0.0.1
   port: 8080
 
 chroma:
@@ -39,10 +39,10 @@ security:
   requests_per_hour: 1000
   burst_limit: 10  # max requests per second
 
-  # API key authentication (disabled by default)
-  auth_enabled: false
-  api_keys: []  # List of API keys (or hashed keys if api_keys_hashed is true)
-  api_keys_hashed: false  # Set to true if keys in api_keys are SHA-256 hashes
+  # API key authentication (enabled by default)
+  auth_enabled: true
+  api_keys: []  # List of SHA-256 hashed API keys
+  api_keys_hashed: true  # Keys in api_keys are SHA-256 hashes
 
 # Observability settings (OpenTelemetry + OpenLLMetry)
 # Requires: pip install corpus-callosum[observability]
@@ -59,3 +59,20 @@ mcp:
   enabled: false  # Mount MCP endpoint on the API server
   transport: http  # "stdio" for CLI, "http" for remote access
   port: 8081  # HTTP port (only used when transport is "http")
+
+# HashiCorp Vault integration for secrets management
+# Requires: pip install corpus-callosum[vault]
+vault:
+  enabled: false  # Enable Vault-backed secrets
+  address: "http://localhost:8200"  # Vault server address
+  auth_method: "token"  # "token" or "approle"
+  token: null  # Vault token (or set VAULT_TOKEN env var)
+  role_id: null  # AppRole RoleID (or set VAULT_ROLE_ID env var)
+  secret_id: null  # AppRole SecretID (or set VAULT_SECRET_ID env var)
+  token_ttl: 3600  # Token TTL in seconds
+  token_max_ttl: 14400  # Max token TTL in seconds
+  cache_ttl: 300  # Secret cache TTL in seconds
+  secret_paths:
+    api_keys: "corpus-callosum/api-keys"
+    database: "corpus-callosum/database"
+    model: "corpus-callosum/model"

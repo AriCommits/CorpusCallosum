@@ -38,7 +38,7 @@ def register_resources(mcp: FastMCP, retriever: HybridRetriever) -> None:
             return "\n\n".join(parts)
         except Exception as exc:
             logger.exception("get_collection_content failed")
-            return f"Error reading collection '{name}': {exc}"
+            return f"Error reading collection. Check server logs for details."
 
     @mcp.resource("collection://{name}/meta")
     def get_collection_meta(name: str) -> str:
@@ -71,4 +71,4 @@ def register_resources(mcp: FastMCP, retriever: HybridRetriever) -> None:
             return "\n".join(lines)
         except Exception as exc:
             logger.exception("get_collection_meta failed")
-            return f"Error reading collection metadata '{name}': {exc}"
+            return f"Error reading collection metadata. Check server logs for details."

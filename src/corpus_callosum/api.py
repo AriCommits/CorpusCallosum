@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -77,14 +79,26 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 # Initialize app with OpenAPI metadata
+config_at_startup = get_config()
+docs_disabled = config_at_startup.security.auth_enabled
+
 app = FastAPI(
     title="CorpusCallosum API",
     version="0.1.0",
     description="Local-first RAG service with hybrid retrieval (semantic + BM25)",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url=None if config_at_startup.server.host != "127.0.0.1" else "/docs",
+    redoc_url=None if config_at_startup.server.host != "127.0.0.1" else "/redoc",
+    openapi_url=None if config_at_startup.server.host != "127.0.0.1" else "/openapi.json",
     lifespan=lifespan,
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 
@@ -170,11 +184,14 @@ class IngestRequest(BaseModel):
     file_path: str = Field(
         ...,
         description="Directory or file path to ingest",
+        max_length=500,
         examples=["./vault/biology", "/data/documents/chapter1.pdf"],
     )
     collection: str = Field(
         ...,
         description="Target collection name",
+        max_length=100,
+        pattern=r"^[a-zA-Z0-9_-]+$",
         examples=["biology101", "research_papers"],
     )
 
@@ -193,21 +210,27 @@ class QueryRequest(BaseModel):
     query: str = Field(
         ...,
         description="Question to ask",
+        max_length=10000,
         examples=["What is photosynthesis?", "Explain the main concepts"],
     )
     collection: str = Field(
         ...,
         description="Collection to search",
+        max_length=100,
+        pattern=r"^[a-zA-Z0-9_-]+$",
         examples=["biology101"],
     )
     model: str | None = Field(
         default=None,
         description="Override the default model for this request",
+        max_length=100,
         examples=["llama3", "mistral"],
     )
     session_id: str | None = Field(
         default=None,
         description="Session ID for conversation memory (multi-turn follow-ups)",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
         examples=["session-abc123"],
     )
 
@@ -218,6 +241,7 @@ class CritiqueRequest(BaseModel):
     essay_text: str = Field(
         ...,
         description="Essay text to critique",
+        max_length=100000,
         examples=["Climate change is a significant challenge facing humanity..."],
     )
 
@@ -228,6 +252,8 @@ class FlashcardsRequest(BaseModel):
     collection: str = Field(
         ...,
         description="Collection name to generate flashcards from",
+        max_length=100,
+        pattern=r"^[a-zA-Z0-9_-]+$",
         examples=["biology101"],
     )
 

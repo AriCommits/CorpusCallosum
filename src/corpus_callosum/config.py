@@ -42,7 +42,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "rrf_k": 60,
     },
     "server": {
-        "host": "0.0.0.0",
+        "host": "127.0.0.1",
         "port": 8080,
     },
     "chroma": {
@@ -56,9 +56,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "requests_per_minute": 60,
         "requests_per_hour": 1000,
         "burst_limit": 10,
-        "auth_enabled": False,
+        "auth_enabled": True,
         "api_keys": [],
-        "api_keys_hashed": False,
+        "api_keys_hashed": True,
     },
     "observability": {
         "enabled": False,
@@ -71,6 +71,20 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "enabled": False,
         "transport": "http",
         "port": 8081,
+    },
+    "vault": {
+        "enabled": False,
+        "address": "http://localhost:8200",
+        "auth_method": "token",
+        "token": None,
+        "role_id": None,
+        "secret_id": None,
+        "token_ttl": 3600,
+        "token_max_ttl": 14400,
+        "token_bound_cidrs": [],
+        "cache_ttl": 300,
+        "retry_max_attempts": 3,
+        "retry_backoff_ms": 1000,
     },
 }
 
@@ -153,6 +167,22 @@ class McpConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class VaultConfig:
+    enabled: bool
+    address: str
+    auth_method: str
+    token: str | None
+    role_id: str | None
+    secret_id: str | None
+    token_ttl: int
+    token_max_ttl: int
+    token_bound_cidrs: tuple[str, ...]
+    cache_ttl: int
+    retry_max_attempts: int
+    retry_backoff_ms: int
+
+
+@dataclass(frozen=True, slots=True)
 class Config:
     paths: PathsConfig
     embedding: EmbeddingConfig
@@ -164,6 +194,7 @@ class Config:
     security: SecurityConfig
     observability: ObservabilityConfig
     mcp: McpConfig
+    vault: VaultConfig
     config_path: Path
 
     @classmethod
@@ -184,6 +215,7 @@ class Config:
         security = data.get("security", {})
         observability = data.get("observability", {})
         mcp = data.get("mcp", {})
+        vault = data.get("vault", {})
 
         parsed = cls(
             paths=PathsConfig(
@@ -294,6 +326,28 @@ class Config:
                 enabled=bool(mcp.get("enabled", DEFAULT_CONFIG["mcp"]["enabled"])),
                 transport=str(mcp.get("transport", DEFAULT_CONFIG["mcp"]["transport"])),
                 port=int(mcp.get("port", DEFAULT_CONFIG["mcp"]["port"])),
+            ),
+            vault=VaultConfig(
+                enabled=bool(vault.get("enabled", DEFAULT_CONFIG["vault"]["enabled"])),
+                address=str(vault.get("address", DEFAULT_CONFIG["vault"]["address"])),
+                auth_method=str(vault.get("auth_method", DEFAULT_CONFIG["vault"]["auth_method"])),
+                token=vault.get("token", DEFAULT_CONFIG["vault"]["token"]),
+                role_id=vault.get("role_id", DEFAULT_CONFIG["vault"]["role_id"]),
+                secret_id=vault.get("secret_id", DEFAULT_CONFIG["vault"]["secret_id"]),
+                token_ttl=int(vault.get("token_ttl", DEFAULT_CONFIG["vault"]["token_ttl"])),
+                token_max_ttl=int(
+                    vault.get("token_max_ttl", DEFAULT_CONFIG["vault"]["token_max_ttl"])
+                ),
+                token_bound_cidrs=tuple(
+                    vault.get("token_bound_cidrs", DEFAULT_CONFIG["vault"]["token_bound_cidrs"])
+                ),
+                cache_ttl=int(vault.get("cache_ttl", DEFAULT_CONFIG["vault"]["cache_ttl"])),
+                retry_max_attempts=int(
+                    vault.get("retry_max_attempts", DEFAULT_CONFIG["vault"]["retry_max_attempts"])
+                ),
+                retry_backoff_ms=int(
+                    vault.get("retry_backoff_ms", DEFAULT_CONFIG["vault"]["retry_backoff_ms"])
+                ),
             ),
             config_path=config_path,
         )

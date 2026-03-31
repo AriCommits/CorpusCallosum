@@ -34,6 +34,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _redact_url(url: str | None) -> str | None:
+    """Redact credentials from a URL for safe logging."""
+    if not url:
+        return url
+    try:
+        from urllib.parse import urlparse, urlunparse
+
+        parsed = urlparse(url)
+        if parsed.password:
+            parsed = parsed._replace(netloc=f"{parsed.username}:***@{parsed.hostname}")
+            return urlunparse(parsed)
+        return url
+    except Exception:
+        return url
+
+
 @dataclass
 class ObservabilityConfig:
     """Configuration for observability setup."""
@@ -117,7 +133,7 @@ def _add_otlp_exporter(provider: TracerProvider, config: ObservabilityConfig) ->
         )
         processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(processor)
-        logger.info("OTLP exporter enabled: %s", config.otlp_endpoint)
+        logger.info("OTLP exporter enabled: %s", _redact_url(config.otlp_endpoint))
     except ImportError:
         logger.warning(
             "OTLP exporter not available. Install with: pip install opentelemetry-exporter-otlp"
@@ -133,9 +149,7 @@ def _setup_openllmetry() -> bool:
         logger.info("OpenLLMetry instrumentation enabled")
         return True
     except ImportError:
-        logger.debug(
-            "OpenLLMetry not available. Install with: pip install openllmetry"
-        )
+        logger.debug("OpenLLMetry not available. Install with: pip install openllmetry")
         return False
 
 

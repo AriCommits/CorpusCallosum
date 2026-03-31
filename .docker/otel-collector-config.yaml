@@ -14,26 +14,23 @@ processors:
 exporters:
   postgres:
     driver: postgres
-    dsn: postgresql://otel:otel_password@postgres:5432/otel_traces
+    dsn: postgresql://${env:POSTGRES_USER}:${env:POSTGRES_PASSWORD}@postgres:5432/${env:POSTGRES_DB}
     table: traces
 
   prometheus:
     endpoint: 0.0.0.0:8889
-
-  debug:
-    verbosity: detailed
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [postgres, debug]
+      exporters: [postgres]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [prometheus, debug]
+      exporters: [prometheus]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      exporters: []

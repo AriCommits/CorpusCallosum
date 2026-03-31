@@ -39,6 +39,9 @@ observability = [
 mcp = [
   "mcp>=1.0.0",
 ]
+vault = [
+  "hvac>=2.0.0",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -115,6 +118,7 @@ module = [
   "opentelemetry.*",
   "openllmetry.*",
   "mcp.*",
+  "hvac.*",
 ]
 ignore_missing_imports = true
 

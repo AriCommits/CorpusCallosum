@@ -6,15 +6,19 @@ ENV PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-# Install curl for health checks
 RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -r appuser && useradd -r -g appuser -m appuser
 
 COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip && python -m pip install -r /app/requirements.txt
 
 COPY src /app/src
 COPY configs /app/configs
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 ENV PYTHONPATH=/app/src
 
