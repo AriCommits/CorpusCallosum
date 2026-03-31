@@ -67,11 +67,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "console_exporter": False,
         "openllmetry_enabled": True,
     },
-    "mcp": {
-        "enabled": False,
-        "transport": "http",
-        "port": 8081,
-    },
     "vault": {
         "enabled": False,
         "address": "http://localhost:8200",
@@ -160,13 +155,6 @@ class ObservabilityConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class McpConfig:
-    enabled: bool
-    transport: str
-    port: int
-
-
-@dataclass(frozen=True, slots=True)
 class VaultConfig:
     enabled: bool
     address: str
@@ -193,7 +181,6 @@ class Config:
     chroma: ChromaConfig
     security: SecurityConfig
     observability: ObservabilityConfig
-    mcp: McpConfig
     vault: VaultConfig
     config_path: Path
 
@@ -214,7 +201,6 @@ class Config:
         chroma = data.get("chroma", {})
         security = data.get("security", {})
         observability = data.get("observability", {})
-        mcp = data.get("mcp", {})
         vault = data.get("vault", {})
 
         parsed = cls(
@@ -321,11 +307,6 @@ class Config:
                         DEFAULT_CONFIG["observability"]["openllmetry_enabled"],
                     )
                 ),
-            ),
-            mcp=McpConfig(
-                enabled=bool(mcp.get("enabled", DEFAULT_CONFIG["mcp"]["enabled"])),
-                transport=str(mcp.get("transport", DEFAULT_CONFIG["mcp"]["transport"])),
-                port=int(mcp.get("port", DEFAULT_CONFIG["mcp"]["port"])),
             ),
             vault=VaultConfig(
                 enabled=bool(vault.get("enabled", DEFAULT_CONFIG["vault"]["enabled"])),

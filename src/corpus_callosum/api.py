@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import TYPE_CHECKING
@@ -258,6 +257,23 @@ class FlashcardsRequest(BaseModel):
     )
 
 
+class SummarizeRequest(BaseModel):
+    """Request to summarize a collection."""
+
+    collection: str = Field(
+        ...,
+        description="Collection name to summarize",
+        max_length=100,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        examples=["biology101"],
+    )
+    detail_level: str = Field(
+        default="medium",
+        description="Level of detail: 'brief', 'medium', or 'detailed'",
+        pattern=r"^(brief|medium|detailed)$",
+    )
+
+
 class CollectionsResponse(BaseModel):
     """Response listing available collections."""
 
@@ -449,6 +465,55 @@ def flashcards(request: FlashcardsRequest) -> StreamingResponse:
     return StreamingResponse(_sse_stream(tokens), media_type="text/event-stream")
 
 
+@app.post(
+    "/summarize",
+    tags=["RAG"],
+    summary="Summarize collection",
+    description="Generate a structured summary of a collection with key topics and takeaways.",
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid request or empty collection"},
+        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
+    },
+    dependencies=[Depends(security_dependency)],
+)
+def summarize(request: SummarizeRequest) -> JSONResponse:
+    """Summarize collection content."""
+    agent = _get_agent()
+    retriever = _get_retriever()
+    try:
+        chunks = retriever.collection_documents(request.collection)
+        if not chunks:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No documents found in collection '{request.collection}'",
+            )
+
+        context = "\n\n".join(chunk.text for chunk in chunks)
+        limit = {"brief": 4000, "medium": 8000, "detailed": 16000}.get(request.detail_level, 8000)
+        if len(context) > limit:
+            context = context[:limit]
+
+        prompt = (
+            f"Provide a {request.detail_level} summary of the following source material. "
+            "Include key topics, main takeaways, and important concepts. "
+            "Structure the summary with clear headings.\n\n"
+            f"Source material:\n{context}\n"
+        )
+        tokens = agent._stream_generation(prompt)
+        summary = "".join(tokens)
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during summarization",
+        ) from exc
+
+    return JSONResponse({"summary": summary})
+
+
 @app.get(
     "/collections",
     response_model=CollectionsResponse,
@@ -479,25 +544,6 @@ def main() -> None:
         port=config.server.port,
         reload=False,
     )
-
-
-def _mount_mcp() -> None:
-    """Mount MCP HTTP transport if configured."""
-    config = get_config()
-    if not config.mcp.enabled:
-        return
-    try:
-        from .mcp import mount_mcp as _mount
-
-        _mount(app)
-        logger.info("MCP server mounted at /mcp")
-    except ImportError:
-        logger.warning(
-            "MCP enabled but package not installed. Run: pip install corpus-callosum[mcp]"
-        )
-
-
-_mount_mcp()
 
 
 if __name__ == "__main__":

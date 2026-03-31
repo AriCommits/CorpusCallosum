@@ -62,21 +62,13 @@
 
 #### Phase 4: Query Expansion & Summarization
 - [ ] Implement query expansion via LLM-generated alternative phrasings
-- [x] Add `/summarize` endpoint for collection summarization (via MCP tool)
+- [x] Add `/summarize` REST endpoint for collection summarization
 - [ ] Add metadata filtering to retrieval
 
 #### Phase 5: Optional Enhancements
 - [ ] Web search integration (DuckDuckGo/SearXNG)
 - [ ] Document topic extraction
 - [ ] Agent-like capabilities for complex tasks
-
-#### Phase 6: MCP Integration
-- [x] Create MCP server with stdio transport (Claude Desktop, Cursor, Windsurf)
-- [x] Create MCP server with HTTP transport (remote access)
-- [x] Expose 6 tools: query_documents, ingest_documents, list_collections, critique_writing, generate_flashcards, summarize_collection
-- [x] Expose 2 resources: collection contents, collection metadata
-- [x] Mount MCP endpoint on existing FastAPI app
-- [x] Add MCP CLI entry point (corpus-mcp)
 
 ### 1. Enhanced Retrieval
 - [ ] Add reranking models for improved relevance
