@@ -47,8 +47,8 @@ security:
 # Observability settings (OpenTelemetry + OpenLLMetry)
 # Requires: pip install corpus-callosum[observability]
 observability:
-  enabled: false  # Set to true to enable tracing
+  enabled: true  # Set to true to enable tracing
   service_name: corpus-callosum
-  otlp_endpoint: null  # e.g., "http://otel-collector:4317" for OTLP collector
+  otlp_endpoint: http://otel-collector:4317  # e.g., "http://otel-collector:4317" for OTLP collector
   console_exporter: false  # Set to true for development debugging
   openllmetry_enabled: true  # Enable LLM-specific tracing

@@ -6,6 +6,8 @@ CorpusCallosum is a local-first RAG service with:
 - hybrid retrieval (semantic + BM25 + RRF),
 - local model generation (Ollama-compatible `/api/generate`),
 - API endpoints for ingest, query, critique, flashcards, and collection listing.
+- built-in security (rate limiting, API key auth),
+- OpenTelemetry observability with Jaeger tracing.
 
 ## Project layout
 
@@ -17,12 +19,28 @@ src/corpus_callosum/
   retriever.py
   agent.py
   api.py
+  security.py
+  observability.py
+  setup.py
 
 configs/
   corpus_callosum.yaml.example
+  corpus_callosum.docker.yaml.example
+
+.docker/
+  Dockerfile
+  docker-compose.yml
+  otel-collector-config.yaml
 
 tests/
   test_smoke.py
+  test_agent.py
+  test_api.py
+  test_config.py
+  test_ingest.py
+  test_observability.py
+  test_retriever.py
+  test_security.py
 ```
 
 ## Requirements
@@ -66,11 +84,20 @@ corpus-api
 ### Endpoints
 
 - `GET /health`
+- `GET /rate-limit` - Check rate limit status
 - `POST /ingest` body: `{ "file_path": "./vault/bio201", "collection": "bio201" }`
 - `POST /query` body: `{ "query": "What is photosynthesis?", "collection": "bio201" }` (SSE stream)
 - `POST /critique` body: `{ "essay_text": "..." }` (SSE stream)
 - `POST /flashcards` body: `{ "collection": "bio201" }` (SSE stream)
 - `GET /collections`
+
+### API Documentation
+
+Interactive API docs are available at:
+
+- Swagger UI: `http://localhost:8080/docs`
+- ReDoc: `http://localhost:8080/redoc`
+- OpenAPI JSON: `http://localhost:8080/openapi.json`
 
 ## CLI ingest
 
@@ -86,14 +113,52 @@ python3 tests/test_smoke.py
 
 This test creates a temporary markdown file, ingests it into a test collection, queries it, and prints the streamed response.
 
-## Docker and ChromaDB
+## Security
 
-This repo includes Docker support for running the API and ChromaDB together.
+### Rate Limiting
+
+Rate limiting is enabled by default:
+
+- 10 requests per second (burst)
+- 60 requests per minute
+- 1,000 requests per hour
+
+Configure in your YAML:
+
+```yaml
+security:
+  rate_limit_enabled: true
+  requests_per_minute: 60
+  requests_per_hour: 1000
+  burst_limit: 10
+```
+
+### API Key Authentication
+
+Enable API key auth:
+
+```yaml
+security:
+  auth_enabled: true
+  api_keys:
+    - your-secret-key-here
+```
+
+Then include the key in requests:
+
+```bash
+curl -H "X-API-Key: your-secret-key-here" http://localhost:8080/health
+```
+
+## Docker and Observability
+
+This repo includes Docker support for running the API, ChromaDB, and observability stack together.
 
 Files:
 
 - `.docker/Dockerfile` - builds the API container.
-- `docker-compose.yml` - runs `corpus_api` + `chroma` services.
+- `.docker/docker-compose.yml` - runs `corpus_api` + `chroma` + `otel-collector` + `jaeger` services.
+- `.docker/otel-collector-config.yaml` - OpenTelemetry Collector configuration.
 - `configs/corpus_callosum.docker.yaml.example` - config template using Chroma HTTP mode.
 
 ### Setup
@@ -107,7 +172,7 @@ cp configs/corpus_callosum.docker.yaml.example configs/corpus_callosum.docker.ya
 Then start services:
 
 ```bash
-docker compose up --build
+docker compose -f .docker/docker-compose.yml up --build
 ```
 
 ### Notes
@@ -120,3 +185,130 @@ docker compose up --build
   - `chroma.port: 8000`
 - Model endpoint in the docker config points to host Ollama by default:
   - `http://host.docker.internal:11434/api/generate`
+
+### Observability Stack
+
+The Docker compose includes an observability stack:
+
+- **OpenTelemetry Collector** (`otel-collector:4317`) - receives and processes traces
+- **Jaeger** (`jaeger:16686`) - trace visualization UI
+
+Access the Jaeger UI at `http://localhost:16686` to view RAG query traces, LLM call metrics, and request flows.
+
+Enable observability in your config:
+
+```yaml
+observability:
+  enabled: true
+  otlp_endpoint: http://otel-collector:4317
+  openllmetry_enabled: true
+```
+
+## Examples
+
+### Ingest a directory
+
+```bash
+curl -X POST http://localhost:8080/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"file_path": "./vault/biology", "collection": "biology101"}'
+```
+
+### Query a collection
+
+```bash
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is photosynthesis?", "collection": "biology101"}'
+```
+
+### Generate flashcards
+
+```bash
+curl -X POST http://localhost:8080/flashcards \
+  -H "Content-Type: application/json" \
+  -d '{"collection": "biology101"}'
+```
+
+### List collections
+
+```bash
+curl http://localhost:8080/collections
+```
+
+## Tutorial: Integrating with Local Knowledge Bases
+
+### 1. Prepare your documents
+
+Place your documents (PDF, Markdown, TXT) in the `vault/` directory:
+
+```bash
+mkdir -p vault/my-knowledge
+cp ~/Documents/notes/*.md vault/my-knowledge/
+```
+
+### 2. Ingest your documents
+
+```bash
+curl -X POST http://localhost:8080/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"file_path": "./vault/my-knowledge", "collection": "my-notes"}'
+```
+
+### 3. Query your knowledge base
+
+```bash
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What did I learn about machine learning?", "collection": "my-notes"}'
+```
+
+### 4. Generate study flashcards
+
+```bash
+curl -X POST http://localhost:8080/flashcards \
+  -H "Content-Type: application/json" \
+  -d '{"collection": "my-notes"}'
+```
+
+## Troubleshooting
+
+### Ollama not running
+
+**Error**: `404 Not Found` for `http://localhost:11434/api/generate`
+
+**Solution**: Start Ollama and pull a model:
+
+```bash
+ollama serve
+ollama pull llama3
+```
+
+### Config file not found
+
+**Error**: `Configuration file not found at ...`
+
+**Solution**: Copy the example config:
+
+```bash
+cp configs/corpus_callosum.yaml.example configs/corpus_callosum.yaml
+```
+
+### Docker: Cannot connect to Ollama
+
+**Solution**: The Docker config uses `host.docker.internal` to reach Ollama on your host. Ensure Ollama is running and accessible.
+
+### ChromaDB connection refused
+
+**Solution**: If running locally (not Docker), set `chroma.mode: persistent` in your config. For Docker, ensure the compose stack is running.
+
+### Import errors for observability
+
+**Error**: `Observability enabled but opentelemetry not installed`
+
+**Solution**: Install observability dependencies:
+
+```bash
+pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp \
+  opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-httpx
+```

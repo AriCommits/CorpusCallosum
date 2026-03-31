@@ -10,8 +10,8 @@
 ### 2. Security Enhancements
 - [x] Replace broad exception catches with specific exceptions
 - [x] Add input validation for file paths to prevent directory traversal
-- [ ] Consider adding rate limiting to API endpoints
-- [ ] Add basic authentication option for API
+- [x] Add rate limiting to API endpoints
+- [x] Add basic authentication option for API
 
 ### 3. Docker & Deployment
 - [x] Create actual config files from examples in the repository (with .gitignore protection)
@@ -27,10 +27,16 @@
 - [x] Add linting and formatting checks (ruff, black, mypy)
 
 ### 5. Documentation
-- [ ] Improve README with troubleshooting section
-- [ ] Add API documentation (OpenAPI/Swagger)
-- [ ] Add examples for common use cases
-- [ ] Create tutorial for integrating with local knowledge bases
+- [x] Improve README with troubleshooting section
+- [x] Add API documentation (OpenAPI/Swagger)
+- [x] Add examples for common use cases
+- [x] Create tutorial for integrating with local knowledge bases
+
+### 6. Observability Container
+- [x] Add OpenTelemetry Collector container to docker-compose
+- [x] Add Jaeger container for trace visualization
+- [x] Configure OTLP exporter for RAG query logging
+- [x] Update docker config to enable observability by default
 
 ## Medium-term Features (1-3 months)
 
