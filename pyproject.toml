@@ -18,6 +18,10 @@ dependencies = [
   "python-dotenv>=1.0.1",
   "pyyaml>=6.0.2",
   "pypdf>=5.1.0",
+  "python-docx>=1.1.0",
+  "beautifulsoup4>=4.12.0",
+  "markdownify>=0.12.0",
+  "striprtf>=0.0.26",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +54,7 @@ corpus-setup = "corpus_callosum.setup:main"
 corpus-ask = "corpus_callosum.cli:ask_main"
 corpus-flashcards = "corpus_callosum.cli:flashcards_main"
 corpus-collections = "corpus_callosum.cli:collections_main"
+corpus-convert = "corpus_callosum.convert:main"
 
 [tool.ruff]
 target-version = "py311"
@@ -113,6 +118,10 @@ module = [
   "httpx.*",
   "opentelemetry.*",
   "openllmetry.*",
+  "docx.*",
+  "bs4.*",
+  "markdownify.*",
+  "striprtf.*",
 ]
 ignore_missing_imports = true
 

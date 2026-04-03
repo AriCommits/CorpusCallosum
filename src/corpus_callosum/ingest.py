@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from hashlib import sha1
 from pathlib import Path
@@ -213,15 +215,100 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         required=True,
         help="Target collection name",
     )
+    parser.add_argument(
+        "--convert",
+        action="store_true",
+        help="Convert unsupported files to markdown before ingesting",
+    )
     return parser
+
+
+def _scan_unsupported_files(path: Path) -> dict[str, list[Path]]:
+    """Scan directory for files that cannot be directly ingested."""
+    unsupported: dict[str, list[Path]] = defaultdict(list)
+
+    if path.is_file():
+        if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            unsupported[path.suffix.lower()].append(path)
+        return dict(unsupported)
+
+    for file_path in path.rglob("*"):
+        if file_path.is_file():
+            ext = file_path.suffix.lower()
+            if ext and ext not in SUPPORTED_EXTENSIONS:
+                unsupported[ext].append(file_path)
+
+    return dict(unsupported)
+
+
+def _warn_unsupported_files(path: Path, unsupported: dict[str, list[Path]]) -> None:
+    """Print warning about unsupported files and suggest conversion."""
+    # Only warn about convertible formats
+    from .convert import FileConverter
+
+    converter = FileConverter()
+    convertible_exts = converter.get_supported_extensions()
+
+    convertible_found: dict[str, int] = {}
+    for ext, files in unsupported.items():
+        if ext in convertible_exts:
+            convertible_found[ext] = len(files)
+
+    if not convertible_found:
+        return
+
+    total = sum(convertible_found.values())
+    ext_list = ", ".join(f"{count} {ext}" for ext, count in sorted(convertible_found.items()))
+
+    print(f"\nWarning: Found {total} file(s) that cannot be directly ingested: {ext_list}")
+    print(f"These files can be converted to markdown first.")
+    print(f"\nTo convert and then ingest, run:")
+    print(f"  corpus-convert {path}")
+    print(f"  corpus-ingest --path {path}/corpus_converted --collection <collection_name>")
+    print(f"\nOr use the --convert flag to do both automatically:")
+    print(f"  corpus-ingest --path {path} --collection <collection_name> --convert\n")
 
 
 def main() -> None:
     parser = _build_arg_parser()
     args = parser.parse_args()
 
+    source_path = Path(args.path).expanduser().resolve()
+
+    if not source_path.exists():
+        print(f"Error: Path does not exist: {source_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Check for unsupported files
+    unsupported = _scan_unsupported_files(source_path)
+
+    if args.convert and unsupported:
+        # Convert files first
+        from .convert import DEFAULT_OUTPUT_DIR, FileConverter
+
+        print("Converting unsupported files to markdown...")
+        converter = FileConverter()
+        results = converter.convert_directory(source_path)
+
+        success_count = sum(1 for r in results if r.success)
+        fail_count = len(results) - success_count
+
+        if success_count > 0:
+            print(f"Converted {success_count} file(s) to markdown.")
+        if fail_count > 0:
+            print(f"Failed to convert {fail_count} file(s).")
+
+        # Update source path to the converted directory
+        converted_path = source_path / DEFAULT_OUTPUT_DIR
+        if converted_path.exists():
+            source_path = converted_path
+            print(f"Ingesting from: {source_path}\n")
+    elif unsupported:
+        # Warn about unsupported files
+        _warn_unsupported_files(source_path, unsupported)
+
     ingester = Ingester()
-    result = ingester.ingest_path(path=args.path, collection_name=args.collection)
+    result = ingester.ingest_path(path=source_path, collection_name=args.collection)
     print(
         "Ingested "
         f"{result.chunks_indexed} chunks from {result.files_indexed} files "
