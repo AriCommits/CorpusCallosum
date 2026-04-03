@@ -52,20 +52,3 @@ observability:
   otlp_endpoint: null  # e.g., "http://localhost:4317" for OTLP collector
   console_exporter: false  # Set to true for development debugging
   openllmetry_enabled: true  # Enable LLM-specific tracing
-
-# HashiCorp Vault integration for secrets management
-# Requires: pip install corpus-callosum[vault]
-vault:
-  enabled: false  # Enable Vault-backed secrets
-  address: "http://localhost:8200"  # Vault server address
-  auth_method: "token"  # "token" or "approle"
-  token: null  # Vault token (or set VAULT_TOKEN env var)
-  role_id: null  # AppRole RoleID (or set VAULT_ROLE_ID env var)
-  secret_id: null  # AppRole SecretID (or set VAULT_SECRET_ID env var)
-  token_ttl: 3600  # Token TTL in seconds
-  token_max_ttl: 14400  # Max token TTL in seconds
-  cache_ttl: 300  # Secret cache TTL in seconds
-  secret_paths:
-    api_keys: "corpus-callosum/api-keys"
-    database: "corpus-callosum/database"
-    model: "corpus-callosum/model"

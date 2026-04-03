@@ -135,17 +135,6 @@ def _get_api_key_auth() -> APIKeyAuth:
     return _api_key_auth
 
 
-def verify_request(
-    request: Request,
-    api_key: str | None = Depends(lambda: None),
-) -> None:
-    """Combined dependency for rate limiting and authentication."""
-    # Check rate limit
-    _get_rate_limiter().check_rate_limit(request)
-    # Check API key if auth is enabled
-    _get_api_key_auth().verify(api_key)
-
-
 # Custom dependency that extracts API key from header
 async def get_api_key(request: Request) -> str | None:
     """Extract API key from request header."""

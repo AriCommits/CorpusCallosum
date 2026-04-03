@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from dataclasses import dataclass
 from hashlib import sha1
 from pathlib import Path
@@ -57,14 +56,6 @@ class Ingester:
             raise FileNotFoundError(f"Path does not exist: {source}")
         if not collection_name.strip():
             raise ValueError("collection_name cannot be empty")
-
-        resolved_path = source.resolve()
-        vault_path = self.config.paths.vault.resolve()
-        if os.path.commonpath([resolved_path, vault_path]) != str(vault_path):
-            raise ValueError(
-                f"Path {source} is outside the allowed vault directory ({vault_path}). "
-                f"Only files within the vault directory can be ingested."
-            )
 
         files = list(self._iter_source_files(source))
         chunk_records: list[ChunkRecord] = []
@@ -206,9 +197,22 @@ class Ingester:
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Ingest documents into ChromaDB")
-    parser.add_argument("--path", required=True, help="File or directory to ingest")
-    parser.add_argument("--collection", required=True, help="Target collection name")
+    parser = argparse.ArgumentParser(
+        prog="corpus-ingest",
+        description="Ingest documents into ChromaDB",
+    )
+    parser.add_argument(
+        "-p",
+        "--path",
+        required=True,
+        help="File or directory to ingest",
+    )
+    parser.add_argument(
+        "-c",
+        "--collection",
+        required=True,
+        help="Target collection name",
+    )
     return parser
 
 

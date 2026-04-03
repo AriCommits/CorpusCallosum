@@ -36,9 +36,6 @@ observability = [
   "opentelemetry-instrumentation-httpx>=0.41b0",
   "openllmetry>=0.3.0",
 ]
-vault = [
-  "hvac>=2.0.0",
-]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -50,6 +47,9 @@ where = ["src"]
 corpus-api = "corpus_callosum.api:main"
 corpus-ingest = "corpus_callosum.ingest:main"
 corpus-setup = "corpus_callosum.setup:main"
+corpus-ask = "corpus_callosum.cli:ask_main"
+corpus-flashcards = "corpus_callosum.cli:flashcards_main"
+corpus-collections = "corpus_callosum.cli:collections_main"
 
 [tool.ruff]
 target-version = "py311"
@@ -113,7 +113,6 @@ module = [
   "httpx.*",
   "opentelemetry.*",
   "openllmetry.*",
-  "hvac.*",
 ]
 ignore_missing_imports = true
 
