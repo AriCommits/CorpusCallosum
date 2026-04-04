@@ -177,9 +177,7 @@ def collections_main() -> None:
 
 
 if __name__ == "__main__":
-    # Allow running as module for testing
-    import sys
-
+    # Allow running as module: python -m corpus_callosum.cli <command>
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
         sys.argv = sys.argv[1:]  # Shift args
@@ -192,3 +190,8 @@ if __name__ == "__main__":
         else:
             print(f"Unknown command: {cmd}")
             print("Available: ask, flashcards, collections")
+            sys.exit(1)
+    else:
+        print("Usage: python -m corpus_callosum.cli <command>")
+        print("Available commands: ask, flashcards, collections")
+        sys.exit(1)
