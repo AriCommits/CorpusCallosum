@@ -6,7 +6,7 @@ embedding:
   model: sentence-transformers/all-MiniLM-L6-v2
 
 model:
-  endpoint: http://host.docker.internal:11434/api/generate
+  endpoint: http://host.docker.internal:11434/
   name: llama3
   timeout_seconds: 120.0
   max_flashcard_context_chars: 12000

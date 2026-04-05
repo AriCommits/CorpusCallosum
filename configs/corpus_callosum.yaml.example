@@ -3,8 +3,8 @@ paths:
   chromadb_store: ./chroma_store
 
 embedding:
-  model: nomic-embed-text  # Ollama embedding (default). Or: sentence-transformers/all-MiniLM-L6-v2
-  backend: null  # Auto-detects from model name (null = auto-detect)
+  model: nomic-embed-text
+  backend: ollama  # Options: 'ollama' or 'sentence-transformers'
 
 model:
   endpoint: http://localhost:11434

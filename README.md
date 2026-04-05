@@ -182,36 +182,34 @@ chroma:
 
 ### Embedding Models
 
-CorpusCallosum supports two embedding backends:
+CorpusCallosum supports two embedding backends. Choose your backend explicitly in the config:
 
 #### Ollama (Recommended - Default)
 Uses the same Ollama service as your LLM. No separate downloads needed.
 
-| Model | Dimensions | Quality | Notes |
-|-------|------------|---------|-------|
-| `nomic-embed-text` | 768 | Excellent | Optimized for longer context |
-| `mxbai-embed-large` | 1024 | State-of-art | Higher quality, slightly slower |
-| `all-minilm` | 384 | Good | Fast and efficient |
-
 ```yaml
 embedding:
-  model: nomic-embed-text
-  backend: null  # Auto-detects Ollama from model name
+  model: nomic-embed-text  # Or: embeddinggemma, mxbai-embed-large, etc.
+  backend: ollama
 ```
+
+**Popular Ollama embedding models:**
+- `nomic-embed-text` - 768 dimensions, excellent quality, optimized for longer context
+- `mxbai-embed-large` - 1024 dimensions, state-of-the-art quality
+- `all-minilm` - 384 dimensions, lightweight and fast
 
 #### sentence-transformers (HuggingFace)
 Downloads models locally from HuggingFace Hub. Runs entirely offline after first download.
 
-| Model | Dimensions | Size | Quality |
-|-------|------------|------|---------|
-| `sentence-transformers/all-MiniLM-L6-v2` | 384 | ~80MB | Good, fast |
-| `sentence-transformers/all-mpnet-base-v2` | 768 | ~420MB | Better, slower |
-
 ```yaml
 embedding:
   model: sentence-transformers/all-MiniLM-L6-v2
-  backend: null  # Auto-detects sentence-transformers from model name
+  backend: sentence-transformers
 ```
+
+**Popular HuggingFace models:**
+- `sentence-transformers/all-MiniLM-L6-v2` - 384 dimensions, ~80MB, good quality
+- `sentence-transformers/all-mpnet-base-v2` - 768 dimensions, ~420MB, higher quality
 
 **Note**: The embedding model is locked per collection. Changing models requires deleting and re-ingesting the collection.
 
@@ -224,7 +222,7 @@ paths:
 
 embedding:
   model: nomic-embed-text  # Or: sentence-transformers/all-MiniLM-L6-v2
-  backend: null  # Auto-detects from model name
+  backend: ollama  # Options: 'ollama' or 'sentence-transformers'
 
 model:
   endpoint: http://localhost:11434  # Ollama endpoint (code appends /api/generate)

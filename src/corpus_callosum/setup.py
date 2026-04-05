@@ -222,61 +222,46 @@ def setup_config() -> tuple[Path | None, bool]:
 
     # Embedding model configuration
     print(bold("\n─── Embedding Model ───"))
-    print("Embeddings convert your documents into vectors for semantic search.")
-    print(
-        "Choose between Ollama (uses same service as your LLM) or sentence-transformers (local HuggingFace models).\n"
-    )
-    print(f"  {bold('Ollama Models')} (requires Ollama running)")
-    print(f"  {bold('1.')} nomic-embed-text (default)")
-    print("     - 768 dimensions, optimized for longer context")
-    print("     - Excellent quality, fast\n")
-    print(f"  {bold('2.')} mxbai-embed-large")
-    print("     - 1024 dimensions, state-of-the-art quality")
-    print("     - Higher quality, slightly slower\n")
-    print(f"  {bold('3.')} all-minilm")
-    print("     - 384 dimensions, lightweight")
-    print("     - Fast and efficient\n")
-    print(f"  {bold('sentence-transformers Models')} (downloads from HuggingFace)")
-    print(f"  {bold('4.')} all-MiniLM-L6-v2")
-    print("     - 384 dimensions, ~80MB download")
-    print("     - Fast and lightweight\n")
-    print(f"  {bold('5.')} all-mpnet-base-v2")
-    print("     - 768 dimensions, ~420MB download")
-    print("     - Higher quality, slower\n")
-    print(f"  {bold('6.')} Custom model")
-    print("     - Specify any Ollama or sentence-transformers model\n")
+    print("Embeddings convert your documents into vectors for semantic search.\n")
+    print(f"  {bold('1.')} Ollama - nomic-embed-text (default, recommended)")
+    print("     - Uses same Ollama service as your LLM")
+    print("     - 768 dimensions, excellent quality\n")
+    print(f"  {bold('2.')} Ollama - custom model")
+    print("     - Specify any Ollama embedding model (e.g., embeddinggemma, mxbai-embed-large)\n")
+    print(f"  {bold('3.')} HuggingFace - all-MiniLM-L6-v2")
+    print("     - Downloads from HuggingFace (~80MB)")
+    print("     - 384 dimensions, good quality\n")
+    print(f"  {bold('4.')} HuggingFace - custom model")
+    print("     - Specify any sentence-transformers model from HuggingFace\n")
 
     while True:
-        choice = prompt_string("Select embedding model (1/2/3/4/5/6)", default="1")
+        choice = prompt_string("Select embedding backend and model (1/2/3/4)", default="1")
         if choice == "1":
             embedding_model = "nomic-embed-text"
+            embedding_backend = "ollama"
             break
         elif choice == "2":
-            embedding_model = "mxbai-embed-large"
+            print("\nEnter the Ollama model name (e.g., 'embeddinggemma', 'mxbai-embed-large'):")
+            embedding_model = prompt_string("Ollama model name")
+            embedding_backend = "ollama"
             break
         elif choice == "3":
-            embedding_model = "all-minilm"
+            embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+            embedding_backend = "sentence-transformers"
             break
         elif choice == "4":
-            embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-            break
-        elif choice == "5":
-            embedding_model = "sentence-transformers/all-mpnet-base-v2"
-            break
-        elif choice == "6":
-            print("\nEnter the model name:")
-            print("  - For Ollama: model name (e.g., 'nomic-embed-text')")
             print(
-                "  - For sentence-transformers: org/model (e.g., 'sentence-transformers/all-MiniLM-L6-v2')"
+                "\nEnter the HuggingFace model (e.g., 'sentence-transformers/all-mpnet-base-v2'):"
             )
-            embedding_model = prompt_string("Model name")
+            embedding_model = prompt_string("HuggingFace model name")
+            embedding_backend = "sentence-transformers"
             break
         else:
-            print(yellow("Please enter 1, 2, 3, 4, 5, or 6."))
+            print(yellow("Please enter 1, 2, 3, or 4."))
 
     config_data["embedding"] = {
         "model": embedding_model,
-        "backend": None,  # Auto-detect from model name
+        "backend": embedding_backend,
     }
 
     # Advanced options

@@ -92,7 +92,7 @@ def create_embedding_backend(config: Config) -> EmbeddingBackend:
     The backend is determined by the embedding.backend config value.
     If not specified, it's inferred from the model name:
     - Models starting with "sentence-transformers/" use sentence-transformers
-    - Other models use Ollama
+    - Other models use Ollama (default)
 
     Args:
         config: Application configuration.
@@ -103,30 +103,27 @@ def create_embedding_backend(config: Config) -> EmbeddingBackend:
     model_name = config.embedding.model
     backend_type = config.embedding.backend
 
+    # Convert string backend to enum if needed
+    if isinstance(backend_type, str):
+        if backend_type.lower() in ("ollama", "ollama_embedding"):
+            backend_type = EmbeddingBackendType.OLLAMA
+        elif backend_type.lower() in (
+            "sentence-transformers",
+            "sentence_transformers",
+            "huggingface",
+        ):
+            backend_type = EmbeddingBackendType.SENTENCE_TRANSFORMERS
+        else:
+            raise ValueError(f"Unknown embedding backend: {backend_type}")
+
     # Auto-detect backend if not specified
     if backend_type is None:
-        if model_name.startswith("sentence-transformers/") or "/" not in model_name:
-            # Assume HuggingFace model if it has sentence-transformers prefix
-            # or if it's a simple name like "all-MiniLM-L6-v2"
-            if not model_name.startswith("sentence-transformers/") and "/" not in model_name:
-                # Check if it looks like an Ollama model (common Ollama embedding models)
-                ollama_models = {
-                    "nomic-embed-text",
-                    "mxbai-embed-large",
-                    "all-minilm",
-                    "snowflake-arctic-embed",
-                }
-                if (
-                    model_name.lower() in ollama_models
-                    or model_name.split(":")[0].lower() in ollama_models
-                ):
-                    backend_type = EmbeddingBackendType.OLLAMA
-                else:
-                    backend_type = EmbeddingBackendType.SENTENCE_TRANSFORMERS
-            else:
-                backend_type = EmbeddingBackendType.SENTENCE_TRANSFORMERS
+        if model_name.startswith("sentence-transformers/"):
+            # Explicit sentence-transformers prefix
+            backend_type = EmbeddingBackendType.SENTENCE_TRANSFORMERS
         else:
-            # Assume Ollama for other model names (e.g., "nomic-embed-text")
+            # Default to Ollama for all other models (no prefix or simple names)
+            # This includes: nomic-embed-text, embeddinggemma, mxbai-embed-large, etc.
             backend_type = EmbeddingBackendType.OLLAMA
 
     if backend_type == EmbeddingBackendType.OLLAMA:
