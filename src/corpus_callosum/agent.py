@@ -46,8 +46,11 @@ class RagAgent:
         collection_name: str,
         model: str | None = None,
         session_id: str | None = None,
+        top_k: int | None = None,
     ) -> tuple[Iterator[str], list[RetrievedChunk]]:
-        chunks = self.retriever.retrieve(query=query, collection_name=collection_name)
+        chunks = self.retriever.retrieve(
+            query=query, collection_name=collection_name, top_k=top_k
+        )
 
         if session_id:
             conversation = get_conversation(session_id)

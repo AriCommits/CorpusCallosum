@@ -12,12 +12,15 @@ Available commands:
     convert      - Convert document formats (corpus-convert)
     api          - Start the API server (corpus-api)
     setup        - Run initial setup (corpus-setup)
+    sync         - Synchronize collections (corpus-sync)
 
 Examples:
     python -m corpus_callosum collections
     python -m corpus_callosum ask -c mycollection "What is X?"
+    python -m corpus_callosum ask -c mycollection "What is X?" -k 10
     python -m corpus_callosum ingest ./docs -c mycollection
     python -m corpus_callosum convert ./docs --scan
+    python -m corpus_callosum sync pull --collection mycollection
 """
 
 from __future__ import annotations
@@ -38,11 +41,14 @@ def main() -> None:
         print("  convert      Convert document formats to Markdown")
         print("  api          Start the API server")
         print("  setup        Run initial setup")
+        print("  sync         Synchronize collections")
         print()
         print("Examples:")
         print("  python -m corpus_callosum collections")
         print('  python -m corpus_callosum ask -c docs "What is X?"')
+        print('  python -m corpus_callosum ask -c docs "What is X?" -k 10')
         print("  python -m corpus_callosum ingest ./docs -c docs")
+        print("  python -m corpus_callosum sync pull --collection docs")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -77,6 +83,10 @@ def main() -> None:
         from .setup import main as setup_main
 
         setup_main()
+    elif command == "sync":
+        from .cli import sync_main
+
+        sync_main()
     elif command in ("-h", "--help", "help"):
         # Re-run with no args to show help
         sys.argv = [sys.argv[0]]

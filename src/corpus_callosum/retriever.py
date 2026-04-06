@@ -50,7 +50,9 @@ class HybridRetriever:
             self._embedding_backend = create_embedding_backend(self.config)
         return self._embedding_backend
 
-    def semantic_search(self, *, query: str, collection_name: str) -> list[RetrievedChunk]:
+    def semantic_search(
+        self, *, query: str, collection_name: str, top_k: int | None = None
+    ) -> list[RetrievedChunk]:
         collection = self._get_existing_collection(collection_name)
         if collection is None:
             return []
@@ -59,11 +61,11 @@ class HybridRetriever:
             return []
 
         query_embedding = self.embedding_backend.encode([query])
-        top_k = self.config.retrieval.top_k_semantic
+        k = top_k if top_k is not None else self.config.retrieval.top_k_semantic
 
         result = collection.query(
             query_embeddings=query_embedding,
-            n_results=top_k,
+            n_results=k,
             include=["documents", "metadatas", "distances"],
         )
 
@@ -83,7 +85,9 @@ class HybridRetriever:
             )
         return output
 
-    def bm25_search(self, *, query: str, collection_name: str) -> list[RetrievedChunk]:
+    def bm25_search(
+        self, *, query: str, collection_name: str, top_k: int | None = None
+    ) -> list[RetrievedChunk]:
         collection = self._get_existing_collection(collection_name)
         if collection is None:
             return []
@@ -106,8 +110,9 @@ class HybridRetriever:
             return []
 
         scores = bm25.get_scores(query_tokens)
+        k = top_k if top_k is not None else self.config.retrieval.top_k_bm25
         ranked_indices = sorted(range(len(ids)), key=lambda idx: float(scores[idx]), reverse=True)[
-            : self.config.retrieval.top_k_bm25
+            :k
         ]
 
         output: list[RetrievedChunk] = []
@@ -122,9 +127,13 @@ class HybridRetriever:
             )
         return output
 
-    def retrieve(self, *, query: str, collection_name: str) -> list[RetrievedChunk]:
-        semantic = self.semantic_search(query=query, collection_name=collection_name)
-        bm25 = self.bm25_search(query=query, collection_name=collection_name)
+    def retrieve(
+        self, *, query: str, collection_name: str, top_k: int | None = None
+    ) -> list[RetrievedChunk]:
+        semantic = self.semantic_search(
+            query=query, collection_name=collection_name, top_k=top_k
+        )
+        bm25 = self.bm25_search(query=query, collection_name=collection_name, top_k=top_k)
 
         merged: dict[str, RetrievedChunk] = {}
         rrf_scores: dict[str, float] = {}
@@ -153,8 +162,9 @@ class HybridRetriever:
         ranked = sorted(
             merged.values(), key=lambda chunk: rrf_scores.get(chunk.id, 0.0), reverse=True
         )
+        final_k = top_k if top_k is not None else self.config.retrieval.top_k_final
         output: list[RetrievedChunk] = []
-        for chunk in ranked[: self.config.retrieval.top_k_final]:
+        for chunk in ranked[:final_k]:
             output.append(
                 RetrievedChunk(
                     id=chunk.id,
