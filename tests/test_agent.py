@@ -86,8 +86,10 @@ class TestRagAgent:
 
             _tokens, chunks = agent.query(query="test?", collection_name="test")
 
-            # Verify retriever was called
-            mock_retriever.retrieve.assert_called_once_with(query="test?", collection_name="test")
+            # Verify retriever was called (now includes top_k parameter)
+            mock_retriever.retrieve.assert_called_once_with(
+                query="test?", collection_name="test", top_k=None
+            )
 
             # Verify chunks are returned
             assert len(chunks) == 1
