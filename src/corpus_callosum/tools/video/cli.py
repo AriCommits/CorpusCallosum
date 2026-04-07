@@ -161,5 +161,10 @@ def pipeline(
     click.echo(f"\n✓ Pipeline complete! Final output: {current_file}")
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for corpus-video CLI."""
     video()
+
+
+if __name__ == "__main__":
+    main()

@@ -44,5 +44,10 @@ def quizzes(collection: str, output: str, config: str, count: int, format: str):
         click.echo(formatted)
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for corpus-quizzes CLI."""
     quizzes()
+
+
+if __name__ == "__main__":
+    main()

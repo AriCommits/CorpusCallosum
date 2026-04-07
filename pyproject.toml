@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "corpus-callosum"
-version = "0.3.0"
+version = "0.4.0"
 description = "Unified learning and knowledge management toolkit with RAG, flashcards, and video transcription"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,6 +24,7 @@ dependencies = [
   "striprtf>=0.0.26",
   "click>=8.1.0",
   "ollama>=0.4.0",
+  "mcp[cli]>=1.20.0",
 ]
 
 [project.optional-dependencies]
@@ -50,11 +51,24 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [project.scripts]
+# MCP Server
+corpus-mcp-server = "corpus_callosum.mcp_server.server:main"
+
+# Individual Tool CLIs
+corpus-rag = "corpus_callosum.tools.rag.cli:main"
+corpus-flashcards = "corpus_callosum.tools.flashcards.cli:main"
+corpus-summaries = "corpus_callosum.tools.summaries.cli:main"
+corpus-quizzes = "corpus_callosum.tools.quizzes.cli:main"
+corpus-video = "corpus_callosum.tools.video.cli:main"
+
+# Orchestrations
+corpus-orchestrate = "corpus_callosum.orchestrations.cli:main"
+
+# Legacy entry points (deprecated)
 corpus-api = "corpus_callosum.api:main"
 corpus-ingest = "corpus_callosum.ingest:main"
 corpus-setup = "corpus_callosum.setup:main"
 corpus-ask = "corpus_callosum.cli:ask_main"
-corpus-flashcards = "corpus_callosum.cli:flashcards_main"
 corpus-collections = "corpus_callosum.cli:collections_main"
 corpus-convert = "corpus_callosum.convert:main"
 

@@ -95,5 +95,10 @@ def chat(collection: str, config: str):
     click.echo("\nGoodbye!")
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for corpus-rag CLI."""
     rag()
+
+
+if __name__ == "__main__":
+    main()

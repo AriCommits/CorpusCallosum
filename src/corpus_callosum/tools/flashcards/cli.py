@@ -43,5 +43,10 @@ def flashcards(collection: str, output: str, config: str, difficulty: str, count
         click.echo(formatted)
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for corpus-flashcards CLI."""
     flashcards()
+
+
+if __name__ == "__main__":
+    main()

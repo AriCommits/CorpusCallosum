@@ -43,5 +43,10 @@ def summaries(collection: str, output: str, config: str, length: str):
         click.echo(formatted)
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for corpus-summaries CLI."""
     summaries()
+
+
+if __name__ == "__main__":
+    main()
