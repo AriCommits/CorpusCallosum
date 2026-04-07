@@ -100,7 +100,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         rag_config.retrieval.top_k = top_k
 
         agent = RAGAgent(rag_config, db)
-        response = agent.query(collection, query)
+        response = agent.query(query, collection)
 
         return {
             "status": "success",

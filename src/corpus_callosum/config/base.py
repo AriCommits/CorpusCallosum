@@ -4,16 +4,35 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from corpus_callosum.llm import LLMConfig as LLMBackendConfig
+
 
 @dataclass
 class LLMConfig:
-    """Shared LLM configuration."""
+    """Shared LLM configuration with enhanced backend support."""
 
+    # Legacy fields for compatibility
     endpoint: str = "http://localhost:11434"
     model: str = "llama3"
     timeout_seconds: float = 120.0
     temperature: float = 0.7
     max_tokens: Optional[int] = None
+    
+    # New backend configuration
+    backend: str = "ollama"
+    api_key: Optional[str] = None
+    fallback_models: list[str] = field(default_factory=list)
+    
+    def to_backend_config(self) -> LLMBackendConfig:
+        """Convert to LLM backend configuration."""
+        return LLMBackendConfig.from_dict({
+            "backend": self.backend,
+            "endpoint": self.endpoint,
+            "model": self.model,
+            "timeout_seconds": self.timeout_seconds,
+            "api_key": self.api_key,
+            "fallback_models": self.fallback_models,
+        })
 
 
 @dataclass
@@ -99,6 +118,9 @@ class BaseConfig:
                 "timeout_seconds": self.llm.timeout_seconds,
                 "temperature": self.llm.temperature,
                 "max_tokens": self.llm.max_tokens,
+                "backend": self.llm.backend,
+                "api_key": self.llm.api_key,
+                "fallback_models": self.llm.fallback_models,
             },
             "embedding": {
                 "backend": self.embedding.backend,

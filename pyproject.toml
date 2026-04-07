@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "corpus-callosum"
-version = "0.4.0"
+version = "0.5.0"
 description = "Unified learning and knowledge management toolkit with RAG, flashcards, and video transcription"
 readme = "README.md"
 requires-python = ">=3.11"
