@@ -19,7 +19,7 @@ class DocxConverter(BaseConverter):
         Preserves headings and paragraph structure.
         """
         try:
-            from docx import Document
+            from rag.corpus_callosum.converters.docx import Document
         except ImportError as exc:
             raise RuntimeError(
                 "DOCX conversion requires python-docx. Install with: pip install python-docx"
