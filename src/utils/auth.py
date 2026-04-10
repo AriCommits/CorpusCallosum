@@ -251,21 +251,22 @@ class MCPAuthenticator:
         if not self.config.enabled:
             return {"authenticated": False, "bypass": True}
         
-        # Extract API key from Bearer token
+        # Extract API key from Bearer token or X-API-Key header
         api_key = None
         if credentials and credentials.credentials:
             api_key = credentials.credentials
-        
-        # Also check for API key in header or query param
+
+        # Also check for API key in X-API-Key header
         if not api_key:
             api_key = request.headers.get("X-API-Key")
-        if not api_key:
-            api_key = request.query_params.get("api_key")
-        
+
+        # NOTE: Query parameter auth (api_key=...) is deprecated and no longer supported
+        # to prevent credential logging via URL parameters, proxy logs, and browser history
+
         if not api_key:
             raise HTTPException(
                 status_code=401,
-                detail="API key required. Provide via Authorization header, X-API-Key header, or api_key query parameter.",
+                detail="API key required. Provide via Authorization header (Bearer token) or X-API-Key header.",
                 headers={"WWW-Authenticate": "Bearer"}
             )
         

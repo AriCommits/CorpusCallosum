@@ -26,6 +26,7 @@ from ..tools.video import (
     VideoTranscriber,
 )
 from ..utils.auth import MCPAuthenticator, AuthConfig, add_security_headers
+from ..utils.validation import get_validator
 
 
 def create_mcp_server(config_path: str | None = None) -> FastMCP:
@@ -125,6 +126,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         collection: str,
         query: str,
         top_k: int = 5,
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Query a RAG collection and generate a response.
@@ -133,10 +135,20 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             collection: Collection name to query
             query: Question or query text
             top_k: Number of chunks to retrieve (default: 5)
+            auth_context: Authentication context (injected)
 
         Returns:
             Generated response with source chunks
         """
+        # Validate user input
+        validator = get_validator()
+        query_validation = validator.validate_query(query)
+        if not query_validation.is_valid:
+            return {
+                "status": "error",
+                "error": f"Query validation failed: {query_validation.message}",
+            }
+
         rag_config = RAGConfig.from_dict(config.to_dict())
         rag_config.retrieval.top_k = top_k
 
@@ -154,6 +166,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         collection: str,
         query: str,
         top_k: int = 5,
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Retrieve relevant chunks from a RAG collection without generating a response.
@@ -162,10 +175,20 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             collection: Collection name to query
             query: Search query text
             top_k: Number of chunks to retrieve (default: 5)
+            auth_context: Authentication context (injected)
 
         Returns:
             List of retrieved chunks with metadata
         """
+        # Validate user input
+        validator = get_validator()
+        query_validation = validator.validate_query(query)
+        if not query_validation.is_valid:
+            return {
+                "status": "error",
+                "error": f"Query validation failed: {query_validation.message}",
+            }
+
         rag_config = RAGConfig.from_dict(config.to_dict())
         rag_config.retrieval.top_k = top_k
 
@@ -193,6 +216,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         count: int = 10,
         difficulty: str = "medium",
         output_format: str = "plain",
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Generate flashcards from a collection.
@@ -202,10 +226,20 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             count: Number of flashcards to generate (default: 10)
             difficulty: Difficulty level (easy/medium/hard, default: medium)
             output_format: Output format (plain/anki/quizlet, default: plain)
+            auth_context: Authentication context (injected)
 
         Returns:
             Generated flashcards in requested format
         """
+        # Validate collection name
+        validator = get_validator()
+        collection_validation = validator.validate_collection_name(collection)
+        if not collection_validation.is_valid:
+            return {
+                "status": "error",
+                "error": f"Collection validation failed: {collection_validation.message}",
+            }
+
         flashcard_config = FlashcardConfig.from_dict(config.to_dict())
         flashcard_config.cards_per_topic = count
         flashcard_config.difficulty_levels = [difficulty]
@@ -230,6 +264,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         length: str = "medium",
         include_keywords: bool = True,
         include_outline: bool = False,
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Generate a summary from a collection.
@@ -240,10 +275,28 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             length: Summary length (short/medium/long, default: medium)
             include_keywords: Include key terms (default: True)
             include_outline: Include outline structure (default: False)
+            auth_context: Authentication context (injected)
 
         Returns:
             Generated summary with optional keywords and outline
         """
+        # Validate collection name and topic
+        validator = get_validator()
+        collection_validation = validator.validate_collection_name(collection)
+        if not collection_validation.is_valid:
+            return {
+                "status": "error",
+                "error": f"Collection validation failed: {collection_validation.message}",
+            }
+
+        if topic:
+            topic_validation = validator.validate_query(topic)
+            if not topic_validation.is_valid:
+                return {
+                    "status": "error",
+                    "error": f"Topic validation failed: {topic_validation.message}",
+                }
+
         summary_config = SummaryConfig.from_dict(config.to_dict())
         summary_config.summary_length = length
         summary_config.include_keywords = include_keywords
@@ -267,6 +320,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         count: int = 10,
         question_types: list[str] | None = None,
         output_format: str = "markdown",
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Generate a quiz from a collection.
@@ -276,10 +330,20 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             count: Number of questions to generate (default: 10)
             question_types: Types of questions (multiple_choice/true_false/short_answer)
             output_format: Output format (markdown/json/csv, default: markdown)
+            auth_context: Authentication context (injected)
 
         Returns:
             Generated quiz in requested format
         """
+        # Validate collection name
+        validator = get_validator()
+        collection_validation = validator.validate_collection_name(collection)
+        if not collection_validation.is_valid:
+            return {
+                "status": "error",
+                "error": f"Collection validation failed: {collection_validation.message}",
+            }
+
         quiz_config = QuizConfig.from_dict(config.to_dict())
         quiz_config.questions_per_topic = count
         if question_types:
@@ -303,6 +367,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         video_path: str,
         collection: str,
         model: str = "base",
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Transcribe a video file using Whisper.
@@ -311,6 +376,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
             video_path: Path to video file
             collection: Collection name to store transcript
             model: Whisper model size (tiny/base/small/medium/large, default: base)
+            auth_context: Authentication context (injected)
 
         Returns:
             Transcription result with text and metadata
@@ -332,6 +398,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
     def clean_transcript(
         transcript_text: str,
         model: str | None = None,
+        auth_context: dict = auth_dep,
     ) -> dict[str, Any]:
         """
         Clean and format a transcript using LLM.
@@ -339,6 +406,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         Args:
             transcript_text: Raw transcript text to clean
             model: Optional LLM model to use for cleaning
+            auth_context: Authentication context (injected)
 
         Returns:
             Cleaned transcript text
@@ -375,7 +443,15 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
     @mcp.prompt()
     def study_session_prompt(collection: str, topic: str) -> str:
         """Generate a prompt for a comprehensive study session."""
-        return f"""Please help me study the topic "{topic}" from the collection "{collection}".
+        return f"""Please help me study the material from the collection and topic specified below.
+
+<COLLECTION>
+{collection}
+</COLLECTION>
+
+<TOPIC>
+{topic}
+</TOPIC>
 
 I would like you to:
 1. Provide a clear summary of the main concepts
@@ -391,7 +467,15 @@ Use the following tools in sequence:
     @mcp.prompt()
     def lecture_processing_prompt(video_path: str, course: str) -> str:
         """Generate a prompt for processing a lecture video."""
-        return f"""Please process the lecture video at "{video_path}" for course "{course}".
+        return f"""Please process the lecture video specified below for the course listed.
+
+<VIDEO_PATH>
+{video_path}
+</VIDEO_PATH>
+
+<COURSE>
+{course}
+</COURSE>
 
 Steps:
 1. Transcribe the video using transcribe_video()

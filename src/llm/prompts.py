@@ -6,6 +6,8 @@ Provides standardized prompts for various content generation tasks.
 
 from typing import Any
 
+from src.utils.validation import get_validator
+
 
 class PromptTemplates:
     """Collection of prompt templates for different content types."""
@@ -18,26 +20,33 @@ class PromptTemplates:
         topic: str | None = None,
     ) -> str:
         """Generate prompt for flashcard creation.
-        
+
         Args:
             documents: List of document texts
             difficulty: Difficulty level (beginner, intermediate, advanced)
             count: Number of flashcards to generate
             topic: Optional specific topic to focus on
-            
+
         Returns:
             Formatted prompt for flashcard generation
         """
         topic_instruction = f" about {topic}" if topic else ""
-        
-        return f"""Create {count} flashcards{topic_instruction} based on the provided documents. 
+
+        # Format documents with clear delimiters
+        documents_text = ""
+        for i, doc in enumerate(documents, 1):
+            documents_text += f"""<DOCUMENT id="{i}">
+{doc}
+</DOCUMENT>
+
+"""
+
+        return f"""Create {count} flashcards{topic_instruction} based on the provided documents.
 
 DIFFICULTY LEVEL: {difficulty.title()}
 
 DOCUMENTS:
-{'='*50}
-{chr(10).join(f"Document {i+1}:{chr(10)}{doc}{chr(10)}" for i, doc in enumerate(documents))}
-{'='*50}
+{documents_text}
 
 REQUIREMENTS:
 - Generate exactly {count} flashcards
@@ -64,29 +73,36 @@ Begin generating flashcards:"""
         topic: str | None = None,
     ) -> str:
         """Generate prompt for summary creation.
-        
+
         Args:
             documents: List of document texts
             length: Summary length (short, medium, long)
             topic: Optional specific topic to focus on
-            
+
         Returns:
             Formatted prompt for summary generation
         """
         length_guidance = {
             "short": "1-2 paragraphs, focusing on the most essential points",
-            "medium": "3-5 paragraphs, covering main topics and key details", 
+            "medium": "3-5 paragraphs, covering main topics and key details",
             "long": "6+ paragraphs, providing comprehensive coverage with examples",
         }
-        
+
         topic_instruction = f" focusing specifically on {topic}" if topic else ""
-        
+
+        # Format documents with clear delimiters
+        documents_text = ""
+        for i, doc in enumerate(documents, 1):
+            documents_text += f"""<DOCUMENT id="{i}">
+{doc}
+</DOCUMENT>
+
+"""
+
         return f"""Create a {length} summary of the provided documents{topic_instruction}.
 
 DOCUMENTS:
-{'='*50}
-{chr(10).join(f"Document {i+1}:{chr(10)}{doc}{chr(10)}" for i, doc in enumerate(documents))}
-{'='*50}
+{documents_text}
 
 REQUIREMENTS:
 - Length: {length_guidance.get(length, length)}
@@ -106,26 +122,33 @@ Begin the summary:"""
         topic: str | None = None,
     ) -> str:
         """Generate prompt for quiz creation.
-        
+
         Args:
             documents: List of document texts
             difficulty: Difficulty level (beginner, intermediate, advanced)
             count: Number of quiz questions to generate
             topic: Optional specific topic to focus on
-            
+
         Returns:
             Formatted prompt for quiz generation
         """
         topic_instruction = f" about {topic}" if topic else ""
-        
+
+        # Format documents with clear delimiters
+        documents_text = ""
+        for i, doc in enumerate(documents, 1):
+            documents_text += f"""<DOCUMENT id="{i}">
+{doc}
+</DOCUMENT>
+
+"""
+
         return f"""Create a {count}-question quiz{topic_instruction} based on the provided documents.
 
 DIFFICULTY LEVEL: {difficulty.title()}
 
 DOCUMENTS:
-{'='*50}
-{chr(10).join(f"Document {i+1}:{chr(10)}{doc}{chr(10)}" for i, doc in enumerate(documents))}
-{'='*50}
+{documents_text}
 
 REQUIREMENTS:
 - Generate exactly {count} questions
@@ -157,24 +180,28 @@ Begin generating quiz questions:"""
         conversation_history: list[dict[str, str]] | None = None,
     ) -> str:
         """Generate prompt for RAG response generation.
-        
+
         Args:
             query: User's question or query
             context_chunks: List of relevant document chunks with metadata
             conversation_history: Previous conversation messages
-            
+
         Returns:
             Formatted prompt for RAG response generation
         """
-        # Format context chunks
+        # Format context chunks with delimiters
         context_text = ""
         for i, chunk in enumerate(context_chunks, 1):
             source = chunk.get("source", "Unknown")
             text = chunk.get("text", "")
             score = chunk.get("score", 0.0)
-            
-            context_text += f"Context {i} (Source: {source}, Relevance: {score:.3f}):\n{text}\n\n"
-        
+
+            context_text += f"""<CONTEXT id="{i}" source="{source}" relevance="{score:.3f}">
+{text}
+</CONTEXT>
+
+"""
+
         # Format conversation history if provided
         history_text = ""
         if conversation_history:
@@ -184,13 +211,13 @@ Begin generating quiz questions:"""
                 content = msg.get("content", "")
                 history_text += f"{role.title()}: {content}\n"
             history_text += "\n"
-        
-        return f"""{history_text}RELEVANT CONTEXT:
-{'='*50}
-{context_text}
-{'='*50}
 
-USER QUERY: {query}
+        return f"""{history_text}RELEVANT CONTEXT:
+{context_text}
+
+<USER_QUERY>
+{query}
+</USER_QUERY>
 
 INSTRUCTIONS:
 - Answer the user's query using the provided context

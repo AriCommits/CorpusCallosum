@@ -1,6 +1,7 @@
 """Transcript cleaning logic."""
 
 from pathlib import Path
+from typing import Optional
 
 from .config import VideoConfig
 

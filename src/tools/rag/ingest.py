@@ -1,7 +1,7 @@
 """Document ingestion for RAG."""
 
 from dataclasses import dataclass
-from hashlib import sha1
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Optional
 
@@ -34,19 +34,43 @@ class RAGIngester:
         self.config = config
         self.db = db
 
-    def ingest_path(self, path: Path | str, collection: str) -> IngestResult:
+    def ingest_path(self, path: Path | str, collection: str, max_file_size_mb: int = 1000) -> IngestResult:
         """Ingest documents from a file or directory.
 
         Args:
             path: Path to file or directory
             collection: Collection name
+            max_file_size_mb: Maximum file size in MB (default: 1000)
 
         Returns:
             IngestResult with statistics
+
+        Raises:
+            ValueError: If file size exceeds limit
         """
         source = Path(path).expanduser().resolve()
         if not source.exists():
             raise FileNotFoundError(f"Path does not exist: {source}")
+
+        # Validate file size
+        max_size_bytes = max_file_size_mb * 1024 * 1024
+        if source.is_file():
+            file_size = source.stat().st_size
+            if file_size > max_size_bytes:
+                raise ValueError(
+                    f"File '{source.name}' exceeds maximum size of {max_file_size_mb}MB "
+                    f"({file_size / (1024*1024):.1f}MB)"
+                )
+        else:
+            # For directories, check each file
+            for file_path in source.rglob("*"):
+                if file_path.is_file() and file_path.suffix.lower() in self.SUPPORTED_EXTENSIONS:
+                    file_size = file_path.stat().st_size
+                    if file_size > max_size_bytes:
+                        raise ValueError(
+                            f"File '{file_path.name}' exceeds maximum size of {max_file_size_mb}MB "
+                            f"({file_size / (1024*1024):.1f}MB)"
+                        )
 
         # Get full collection name with prefix
         full_collection = f"{self.config.collection_prefix}_{collection}"
@@ -214,4 +238,4 @@ class RAGIngester:
             Chunk ID hash
         """
         content = f"{collection}::{source_file}::{chunk_index}::{text}"
-        return sha1(content.encode("utf-8")).hexdigest()[:16]
+        return sha256(content.encode("utf-8")).hexdigest()[:16]
