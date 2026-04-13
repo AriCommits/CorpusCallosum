@@ -50,7 +50,7 @@ class VideoTranscriber:
         model = self._load_model()
         language = self.config.whisper_language or None
         segments, _ = model.transcribe(str(video_path), language=language)
-        
+
         lines = []
         for segment in segments:
             text = segment.text.strip()
@@ -58,7 +58,7 @@ class VideoTranscriber:
                 lines.append(f"[{segment.start:.2f}s - {segment.end:.2f}s] {text}")
             else:
                 lines.append(text)
-        
+
         return "\n".join(lines)
 
     def transcribe_folder(
@@ -79,7 +79,8 @@ class VideoTranscriber:
         """
         input_folder = Path(input_folder)
         videos = sorted(
-            f for f in input_folder.iterdir()
+            f
+            for f in input_folder.iterdir()
             if f.suffix.lower() in self.config.supported_extensions
         )
 
@@ -112,7 +113,7 @@ class VideoTranscriber:
             Combined markdown transcript
         """
         lines = []
-        
+
         # Add header if course/lecture provided
         if course or lecture:
             title_parts = []

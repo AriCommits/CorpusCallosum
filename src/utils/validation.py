@@ -22,17 +22,14 @@ PROMPT_INJECTION_PATTERNS: List[re.Pattern] = [
     re.compile(r"ignore\s+.*?previous.*?instructions", re.IGNORECASE),
     re.compile(r"you\s+are\s+now\s+.*?(admin|system|root)", re.IGNORECASE),
     re.compile(r"forget\s+.*?previous", re.IGNORECASE),
-    
     # System markers
     re.compile(r"\[SYSTEM\s*:", re.IGNORECASE),
     re.compile(r"\[ADMIN\s*:", re.IGNORECASE),
     re.compile(r"\[SECURITY\s*:", re.IGNORECASE),
     re.compile(r"\{SYSTEM\s*:", re.IGNORECASE),
-    
     # Special tokens and prompt breaks
     re.compile(r"<\|[\w\s]+\|>"),
     re.compile(r"###\s*(SYSTEM|ADMIN|INSTRUCTION)", re.IGNORECASE),
-    
     # Code execution patterns
     re.compile(r"\bimport\s+", re.IGNORECASE),
     re.compile(r"\beval\s*\(", re.IGNORECASE),
@@ -40,7 +37,6 @@ PROMPT_INJECTION_PATTERNS: List[re.Pattern] = [
     re.compile(r"\bexecfile\s*\(", re.IGNORECASE),
     re.compile(r"\bos\.system", re.IGNORECASE),
     re.compile(r"\bsubprocess\.", re.IGNORECASE),
-    
     # Template injection patterns
     re.compile(r"\{\{.*?__.*?\}\}", re.IGNORECASE),  # Jinja2-like
     re.compile(r"\{%.*?%(})?", re.IGNORECASE),  # Template syntax
@@ -129,8 +125,7 @@ class InputValidator:
         # Only allow alphanumeric, underscores, and hyphens
         if not re.match(r"^[a-zA-Z0-9_-]+$", name):
             raise SecurityError(
-                "Collection name can only contain alphanumeric characters, "
-                "underscores, and hyphens"
+                "Collection name can only contain alphanumeric characters, underscores, and hyphens"
             )
 
         logger.debug(f"Collection name validated: {name}")
@@ -155,9 +150,7 @@ class InputValidator:
             raise SecurityError("top_k must be an integer")
 
         if not min_val <= top_k <= max_val:
-            raise SecurityError(
-                f"top_k must be between {min_val} and {max_val}, got {top_k}"
-            )
+            raise SecurityError(f"top_k must be between {min_val} and {max_val}, got {top_k}")
 
         return top_k
 
@@ -181,8 +174,7 @@ class InputValidator:
 
         if len(history) > max_messages:
             raise SecurityError(
-                f"Conversation history too long: {len(history)} messages "
-                f"(max: {max_messages})"
+                f"Conversation history too long: {len(history)} messages (max: {max_messages})"
             )
 
         # Validate each message
@@ -191,9 +183,7 @@ class InputValidator:
                 raise SecurityError(f"Message {i} must be a dictionary")
 
             if "role" not in msg or "content" not in msg:
-                raise SecurityError(
-                    f"Message {i} must have 'role' and 'content' fields"
-                )
+                raise SecurityError(f"Message {i} must have 'role' and 'content' fields")
 
             # Only allow user and assistant roles
             if msg["role"] not in ("user", "assistant"):
@@ -227,9 +217,7 @@ class InputValidator:
             raise SecurityError("Chunk text must be a string")
 
         if len(text) > max_size:
-            raise SecurityError(
-                f"Chunk text too large: {len(text)} characters (max: {max_size})"
-            )
+            raise SecurityError(f"Chunk text too large: {len(text)} characters (max: {max_size})")
 
         return text
 

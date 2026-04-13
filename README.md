@@ -4,23 +4,24 @@
 
 A modular, AI-powered system for personal knowledge management with RAG (Retrieval-Augmented Generation), flashcard generation, video transcription, and intelligent study workflows.
 
-## ✨ Features
+## Features
 
-### 🎯 **Core Tools**
-- **📚 RAG Agent**: Query your personal knowledge base with intelligent context-aware responses
-- **🧠 Flashcard Generator**: Create study cards from your documents with AI-powered Q&A generation
-- **📝 Summary Generator**: Generate comprehensive summaries with key insights and outlines
-- **❓ Quiz Generator**: Build interactive quizzes with multiple choice, true/false, and short answer questions
-- **🎥 Video Transcriber**: Convert lectures and videos to searchable text with AI-powered cleaning
+### Core Tools
+- **RAG Agent**: Query your personal knowledge base with intelligent context-aware responses
+- **Flashcard Generator**: Create study cards from your documents with AI-powered Q&A generation
+- **Summary Generator**: Generate comprehensive summaries with key insights and outlines
+- **Quiz Generator**: Build interactive quizzes with multiple choice, true/false, and short answer questions
+- **Video Transcriber**: Convert lectures and videos to searchable text with AI-powered cleaning and augmentation
 
-### 🔧 **Advanced Features**
-- **🤖 Multi-LLM Backend Support**: Ollama, OpenAI-compatible, and Anthropic-compatible APIs
-- **🔌 MCP Server Integration**: All tools accessible via Model Context Protocol for agent orchestration
-- **⚡ Dual Interface**: Every tool works standalone via CLI or through MCP for agent workflows
-- **🗄️ Unified Database**: Single ChromaDB instance with intelligent collection management
-- **📋 Pre-Built Orchestrations**: Study sessions, lecture processing pipelines, and knowledge base workflows
+### Advanced Features
+- **Multi-LLM Backend Support**: Ollama, OpenAI-compatible, and Anthropic-compatible APIs
+- **MCP Server Integration**: All tools accessible via Model Context Protocol for agent orchestration
+- **Dual Interface**: Every tool works standalone via CLI or through MCP for agent workflows
+- **Unified Database**: Single ChromaDB instance with intelligent collection management
+- **Pre-Built Orchestrations**: Study sessions, lecture processing pipelines, and knowledge base workflows
+- **Secrets & Key Management**: Secure keyring-backed storage for API keys and credentials
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -61,14 +62,82 @@ pip install corpus-callosum
    ollama pull llama3
    ```
 
-## 🛠️ Usage
+## Usage
 
-### Individual Tools (CLI)
+### Unified CLI (recommended)
+
+All tools are available under a single `corpus` command that works identically on Windows (PowerShell), macOS, and Linux:
+
+```bash
+corpus --help                    # show all subcommands
+corpus --version
+```
+
+#### RAG
+
+```bash
+corpus rag ingest ./documents --collection notes
+corpus rag query "What is machine learning?" --collection notes
+corpus rag chat --collection notes           # interactive session
+```
+
+#### Flashcards, Summaries, Quizzes
+
+```bash
+corpus flashcards --collection notes --count 15 --difficulty intermediate
+corpus summaries  --collection notes --length medium
+corpus quizzes    --collection notes --count 10
+```
+
+#### Video Processing
+
+```bash
+corpus video transcribe ./lectures/ --course BIOL101 --lecture 1
+corpus video clean transcript.md
+corpus video augment transcript.md --auto
+corpus video pipeline ./lectures/ --course BIOL101 --lecture 1  # full pipeline
+```
+
+#### Orchestrations
+
+```bash
+corpus orchestrate study-session    --collection notes --topic "databases"
+corpus orchestrate lecture-pipeline ./lecture.mp4 --course CS101 --lecture 3
+corpus orchestrate build-kb         ./documents --collection kb
+corpus orchestrate query-kb         --collection kb "Explain neural networks"
+```
+
+#### Developer Tools
+
+These replace shell scripts and work cross-platform:
+
+```bash
+corpus dev setup       # pip install -e .[dev]
+corpus dev test        # run pytest
+corpus dev test --cov  # run pytest with coverage
+corpus dev lint        # ruff check + mypy
+corpus dev fmt         # ruff format
+corpus dev build       # build distribution package
+corpus dev clean       # remove __pycache__, build artifacts
+
+# Shell completion (add output to your shell profile)
+corpus dev completion bash        # bash
+corpus dev completion zsh         # zsh
+corpus dev completion fish        # fish
+corpus dev completion powershell  # PowerShell
+```
+
+---
+
+### Individual entry points (backwards-compatible)
+
+The legacy `corpus-*` commands remain available:
 
 ```bash
 # RAG queries
 corpus-rag ingest --path ./documents --collection notes
 corpus-rag query --collection notes --query "What is machine learning?"
+corpus-rag chat --collection notes
 
 # Generate flashcards
 corpus-flashcards --collection notes --count 15 --difficulty intermediate
@@ -79,54 +148,122 @@ corpus-summaries --collection notes --topic "artificial intelligence"
 # Build quizzes
 corpus-quizzes --collection notes --difficulty advanced --count 10
 
-# Transcribe videos
-corpus-video transcribe --input lecture.mp4 --output transcript.txt --clean
+# Transcribe and process videos
+corpus-video transcribe ./lectures/ --course BIOL101 --lecture 1
+corpus-video clean transcript.md
+corpus-video augment transcript.md
+corpus-video pipeline ./lectures/ --course BIOL101 --lecture 1
 
 # Run pre-composed workflows
 corpus-orchestrate study-session --collection notes --topic "databases"
+corpus-orchestrate lecture-pipeline lecture.mp4 --course CS101 --lecture 3
+corpus-orchestrate build-kb ./documents --collection kb
+corpus-orchestrate query-kb --collection kb "Explain neural networks"
+```
+
+### Database Management
+
+```bash
+corpus-db list
+corpus-db backup notes --output ./backups/notes.tar.gz
+corpus-db restore ./backups/notes.tar.gz
+corpus-db backup-all --output-dir ./backups/
+corpus-db export notes --output notes.json --format json
+corpus-db migrate old_collection new_collection
+```
+
+### Secrets & API Key Management
+
+```bash
+# Secrets (backed by system keyring)
+corpus-secrets store OPENAI_API_KEY
+corpus-secrets get   OPENAI_API_KEY
+corpus-secrets list
+corpus-secrets delete OPENAI_API_KEY
+corpus-secrets migrate           # import from environment variables
+corpus-secrets validate          # check required secrets are set
+
+# MCP server API keys
+corpus-api-keys generate my-agent
+corpus-api-keys list
+corpus-api-keys revoke <key>
+corpus-api-keys test   <key>
 ```
 
 ### MCP Server (Agent Integration)
 
-Start the MCP server to expose all tools to AI agents:
-
 ```bash
-# Start MCP server
-corpus-mcp-server
-
-# Server runs on http://localhost:8000/mcp
+corpus-mcp-server                # runs on http://localhost:8000/mcp
 ```
 
-Configure your AI agent to connect to the MCP server and access tools like:
+Configure your AI agent to connect and call tools like:
 - `generate_flashcards(collection="notes", count=10)`
 - `rag_query(collection="notes", query="Explain quantum computing")`
 - `transcribe_video(video_path="lecture.mp4", clean=True)`
 
-## 📁 Project Structure
+## CLI Reference
+
+### Unified `corpus` command
+
+| Subcommand | Description |
+|---|---|
+| `corpus rag` | RAG agent: `ingest`, `query`, `chat` |
+| `corpus flashcards` | Generate flashcards from a collection |
+| `corpus summaries` | Generate summaries from a collection |
+| `corpus quizzes` | Generate quizzes from a collection |
+| `corpus video` | Video processing: `transcribe`, `clean`, `augment`, `pipeline` |
+| `corpus orchestrate` | Workflows: `study-session`, `lecture-pipeline`, `build-kb`, `query-kb` |
+| `corpus dev` | Developer tools: `setup`, `test`, `lint`, `fmt`, `build`, `clean`, `completion` |
+
+### Legacy `corpus-*` entry points
+
+| Command | Description |
+|---|---|
+| `corpus-rag` | RAG agent: `ingest`, `query`, `chat` |
+| `corpus-flashcards` | Generate flashcards |
+| `corpus-summaries` | Generate summaries |
+| `corpus-quizzes` | Generate quizzes |
+| `corpus-video` | Video processing: `transcribe`, `clean`, `augment`, `pipeline` |
+| `corpus-orchestrate` | Workflows: `study-session`, `lecture-pipeline`, `build-kb`, `query-kb` |
+| `corpus-db` | Database: `list`, `backup`, `restore`, `backup-all`, `export`, `migrate` |
+| `corpus-secrets` | Secrets: `store`, `get`, `list`, `delete`, `migrate`, `validate` |
+| `corpus-api-keys` | API keys: `generate`, `list`, `revoke`, `test` |
+| `corpus-mcp-server` | Start the MCP server |
+
+## Project Structure
 
 ```
 CorpusCallosum/
-├── src/corpus_callosum/          # Main package
+├── src/                          # All source packages (package-dir = src)
+│   ├── config/                   # Configuration management (loader, schema)
+│   ├── db/                       # Database layer (ChromaDB, management CLI)
+│   ├── llm/                      # LLM backend abstraction (Ollama, OpenAI, Anthropic)
+│   ├── mcp_server/               # MCP server implementation
+│   ├── orchestrations/           # Pre-composed workflows + CLI
 │   ├── tools/                    # Individual tool implementations
-│   │   ├── rag/                 # RAG agent (ingest, query, retrieval)
-│   │   ├── flashcards/          # Flashcard generation
-│   │   ├── summaries/           # Summary generation
-│   │   ├── quizzes/             # Quiz generation
-│   │   └── video/               # Video transcription & cleaning
-│   ├── llm/                     # LLM backend abstraction
-│   ├── db/                      # Database layer (ChromaDB)
-│   ├── config/                  # Configuration management
-│   ├── mcp_server/              # MCP server implementation
-│   └── orchestrations/          # Pre-composed workflows
+│   │   ├── rag/                  # RAG agent (ingest, query, chat)
+│   │   ├── flashcards/           # Flashcard generation
+│   │   ├── summaries/            # Summary generation
+│   │   ├── quizzes/              # Quiz generation
+│   │   └── video/                # Video transcription, cleaning, augmentation
+│   ├── utils/                    # Shared utilities
+│   │   ├── auth.py               # MCP server authentication
+│   │   ├── manage_keys.py        # corpus-api-keys CLI
+│   │   ├── manage_secrets.py     # corpus-secrets CLI
+│   │   ├── rate_limiting.py
+│   │   ├── secrets.py            # Keyring-backed secret storage
+│   │   ├── security.py
+│   │   └── validation.py
+│   └── corpus_callosum/          # Additional modules (converters, storage, sync)
 ├── configs/                      # Configuration files
-│   ├── base.yaml                # Default configuration
-│   └── examples/                # Example configurations
-├── tests/                       # Test suite
-├── docs/                        # Documentation
-└── .github/workflows/           # CI/CD
+│   ├── base.yaml                 # Default configuration
+│   └── examples/                 # Example configurations
+├── tests/                        # Test suite
+├── docs/                         # Documentation
+└── .github/workflows/            # CI/CD
 ```
 
-## 🔧 Configuration
+## Configuration
 
 CorpusCallosum uses hierarchical YAML configuration:
 
@@ -159,7 +296,7 @@ paths:
   output_dir: ./output
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Design Principles
 
@@ -168,6 +305,7 @@ paths:
 3. **Unified Database**: Single ChromaDB instance with namespaced collections
 4. **Multi-LLM Support**: Pluggable backend system supporting multiple providers
 5. **Configuration Hierarchy**: Flexible, overridable configuration system
+6. **Secure by Default**: Keyring-backed secrets, API key authentication for MCP server
 
 ### LLM Backend Support
 
@@ -175,42 +313,41 @@ paths:
 - **OpenAI-compatible**: Any API supporting `/v1/chat/completions`
 - **Anthropic-compatible**: Claude API via `/v1/messages`
 
-## 🧪 Development
+## Development
 
-### Running Tests
+All developer workflows run through `corpus dev` — no shell scripts needed, identical on every platform:
 
 ```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
-# Run tests
-pytest tests/
-
-# Run with coverage
-pytest --cov=corpus_callosum tests/
+corpus dev setup       # install in editable mode
+corpus dev test        # run pytest
+corpus dev test --cov  # run with coverage
+corpus dev lint        # ruff check + mypy
+corpus dev fmt         # ruff format
+corpus dev build       # build wheel/sdist
+corpus dev clean       # remove __pycache__ and build artifacts
 ```
 
-### Code Quality
+Or use the underlying tools directly:
 
 ```bash
-# Linting
+pip install -e ".[dev]"
+pytest tests/
+pytest --cov=src tests/
 ruff check src/ tests/
-
-# Type checking
 mypy src/
-
-# Auto-formatting
 ruff format src/ tests/
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[Architecture Overview](docs/phases/)**: Detailed system design and implementation phases
-- **[Tool Documentation](src/corpus_callosum/tools/)**: Individual tool specifications
-- **[MCP Integration](src/corpus_callosum/mcp_server/)**: Agent orchestration setup
-- **[Configuration Guide](configs/examples/)**: Advanced configuration examples
+- **[Tool Documentation](docs/tools-usage.md)**: Individual tool usage and examples
+- **[MCP Integration](docs/mcp-integration.md)**: Agent orchestration setup
+- **[Configuration Guide](docs/configuration.md)**: Advanced configuration examples
+- **[Docker Setup](docs/docker.md)**: Container deployment
+- **[Troubleshooting](docs/troubleshooting.md)**: Common issues and solutions
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -220,11 +357,11 @@ ruff format src/ tests/
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [ChromaDB](https://www.trychroma.com/) for vector storage
 - LLM integration via [Ollama](https://ollama.ai/) and compatible APIs
@@ -233,4 +370,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-**CorpusCallosum**: Bridging your knowledge, powered by AI. 🧠✨
+**CorpusCallosum**: Bridging your knowledge, powered by AI.

@@ -29,9 +29,7 @@ def _extract_tar_safely(tar: tarfile.TarFile, target_dir: str) -> None:
 
     for member in tar.getmembers():
         # Resolve the member path
-        member_path = os.path.normpath(os.path.abspath(
-            os.path.join(target_dir, member.name)
-        ))
+        member_path = os.path.normpath(os.path.abspath(os.path.join(target_dir, member.name)))
 
         # Ensure the resolved path is within target_dir
         if not member_path.startswith(target_dir + os.sep) and member_path != target_dir:
@@ -51,29 +49,29 @@ class TestZipSlipPrevention:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a tar with normal file
             tar_buffer = io.BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode='w') as tar:
-                info = tarfile.TarInfo(name='normal_file.txt')
+            with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
+                info = tarfile.TarInfo(name="normal_file.txt")
                 info.size = 13
-                tar.addfile(info, io.BytesIO(b'Hello, World!'))
+                tar.addfile(info, io.BytesIO(b"Hello, World!"))
 
             tar_buffer.seek(0)
             with tarfile.open(fileobj=tar_buffer) as tar:
                 _extract_tar_safely(tar, temp_dir)
 
             # Verify file was extracted
-            extracted_file = Path(temp_dir) / 'normal_file.txt'
+            extracted_file = Path(temp_dir) / "normal_file.txt"
             assert extracted_file.exists()
-            assert extracted_file.read_text() == 'Hello, World!'
+            assert extracted_file.read_text() == "Hello, World!"
 
     def test_parent_directory_traversal_blocked(self):
         """Extraction of ../../../etc/passwd should be blocked."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a tar with path traversal attempt
             tar_buffer = io.BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode='w') as tar:
-                info = tarfile.TarInfo(name='../../../etc/passwd')
+            with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
+                info = tarfile.TarInfo(name="../../../etc/passwd")
                 info.size = 9
-                tar.addfile(info, io.BytesIO(b'malicious'))
+                tar.addfile(info, io.BytesIO(b"malicious"))
 
             tar_buffer.seek(0)
             with tarfile.open(fileobj=tar_buffer) as tar:
@@ -86,10 +84,10 @@ class TestZipSlipPrevention:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a tar with absolute path
             tar_buffer = io.BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode='w') as tar:
-                info = tarfile.TarInfo(name='/etc/passwd')
+            with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
+                info = tarfile.TarInfo(name="/etc/passwd")
                 info.size = 9
-                tar.addfile(info, io.BytesIO(b'malicious'))
+                tar.addfile(info, io.BytesIO(b"malicious"))
 
             tar_buffer.seek(0)
             with tarfile.open(fileobj=tar_buffer) as tar:
@@ -102,10 +100,10 @@ class TestZipSlipPrevention:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a tar with .. in the path
             tar_buffer = io.BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode='w') as tar:
-                info = tarfile.TarInfo(name='subdir/../../../secret.txt')
+            with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
+                info = tarfile.TarInfo(name="subdir/../../../secret.txt")
                 info.size = 6
-                tar.addfile(info, io.BytesIO(b'secret'))
+                tar.addfile(info, io.BytesIO(b"secret"))
 
             tar_buffer.seek(0)
             with tarfile.open(fileobj=tar_buffer) as tar:
@@ -118,16 +116,16 @@ class TestZipSlipPrevention:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a tar with nested directory structure
             tar_buffer = io.BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode='w') as tar:
-                info = tarfile.TarInfo(name='subdir/nested/file.txt')
+            with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
+                info = tarfile.TarInfo(name="subdir/nested/file.txt")
                 info.size = 5
-                tar.addfile(info, io.BytesIO(b'hello'))
+                tar.addfile(info, io.BytesIO(b"hello"))
 
             tar_buffer.seek(0)
             with tarfile.open(fileobj=tar_buffer) as tar:
                 _extract_tar_safely(tar, temp_dir)
 
             # Verify nested file was extracted
-            nested_file = Path(temp_dir) / 'subdir' / 'nested' / 'file.txt'
+            nested_file = Path(temp_dir) / "subdir" / "nested" / "file.txt"
             assert nested_file.exists()
-            assert nested_file.read_text() == 'hello'
+            assert nested_file.read_text() == "hello"

@@ -63,9 +63,7 @@ def validate_embedding_config(config: Dict[str, Any]) -> List[str]:
         if not isinstance(config["backend"], str):
             errors.append("embedding.backend must be a string")
         elif config["backend"] not in ("ollama", "sentence-transformers"):
-            errors.append(
-                "embedding.backend must be 'ollama' or 'sentence-transformers'"
-            )
+            errors.append("embedding.backend must be 'ollama' or 'sentence-transformers'")
 
     if "model" in config and not isinstance(config["model"], str):
         errors.append("embedding.model must be a string")

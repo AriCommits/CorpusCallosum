@@ -6,6 +6,7 @@ from dataclasses import dataclass
 @dataclass
 class LLMResponse:
     """Response from an LLM backend."""
+
     text: str
     model: str
     done: bool = True

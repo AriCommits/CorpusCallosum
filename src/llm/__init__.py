@@ -14,7 +14,7 @@ from .response import LLMResponse
 
 __all__ = [
     "LLMBackend",
-    "LLMBackendType", 
+    "LLMBackendType",
     "LLMConfig",
     "LLMResponse",
     "PromptTemplates",

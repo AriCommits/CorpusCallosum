@@ -30,8 +30,7 @@ class TranscriptCleaner:
             import ollama
         except ImportError:
             raise ImportError(
-                "ollama is required for transcript cleaning. "
-                "Install with: pip install ollama"
+                "ollama is required for transcript cleaning. Install with: pip install ollama"
             )
 
         # Format the prompt with the transcript

@@ -116,8 +116,7 @@ class OperationRateLimiter:
             key = (user_id, operation_type)
             self._active_operations[key] += 1
             logger.debug(
-                f"Started {operation_type} for {user_id}. "
-                f"Active: {self._active_operations[key]}"
+                f"Started {operation_type} for {user_id}. Active: {self._active_operations[key]}"
             )
 
     def end_operation(self, user_id: str, operation_type: str) -> None:
@@ -132,8 +131,7 @@ class OperationRateLimiter:
             if self._active_operations[key] > 0:
                 self._active_operations[key] -= 1
                 logger.debug(
-                    f"Ended {operation_type} for {user_id}. "
-                    f"Active: {self._active_operations[key]}"
+                    f"Ended {operation_type} for {user_id}. Active: {self._active_operations[key]}"
                 )
 
     def check_ingestion_limit(self, user_id: str) -> bool:
@@ -184,9 +182,7 @@ class OperationRateLimiter:
         Returns:
             True if allowed, False if rate limited
         """
-        return self.check_operation_limit(
-            user_id, "query", self.config.query_calls_per_minute, 60
-        )
+        return self.check_operation_limit(user_id, "query", self.config.query_calls_per_minute, 60)
 
     def check_file_size(self, size_mb: float) -> bool:
         """Check if file size is within limits.

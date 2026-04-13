@@ -3,7 +3,7 @@ CorpusCallosum: Unified Learning & Knowledge Management Toolkit
 
 A modular system combining:
 - RAG (Retrieval-Augmented Generation) for document querying
-- Flashcard generation from knowledge bases  
+- Flashcard generation from knowledge bases
 - Summary creation with keyword extraction
 - Quiz generation for assessment
 - Video transcription and processing
