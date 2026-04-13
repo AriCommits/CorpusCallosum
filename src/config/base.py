@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from corpus_callosum.llm import LLMConfig as LLMBackendConfig
+from llm import LLMConfig as LLMBackendConfig
 
 
 @dataclass
@@ -17,22 +17,24 @@ class LLMConfig:
     timeout_seconds: float = 120.0
     temperature: float = 0.7
     max_tokens: Optional[int] = None
-    
+
     # New backend configuration
     backend: str = "ollama"
     api_key: Optional[str] = None
     fallback_models: list[str] = field(default_factory=list)
-    
+
     def to_backend_config(self) -> LLMBackendConfig:
         """Convert to LLM backend configuration."""
-        return LLMBackendConfig.from_dict({
-            "backend": self.backend,
-            "endpoint": self.endpoint,
-            "model": self.model,
-            "timeout_seconds": self.timeout_seconds,
-            "api_key": self.api_key,
-            "fallback_models": self.fallback_models,
-        })
+        return LLMBackendConfig.from_dict(
+            {
+                "backend": self.backend,
+                "endpoint": self.endpoint,
+                "model": self.model,
+                "timeout_seconds": self.timeout_seconds,
+                "api_key": self.api_key,
+                "fallback_models": self.fallback_models,
+            }
+        )
 
 
 @dataclass

@@ -5,7 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any, Optional
 
-from corpus_callosum.db import DatabaseBackend, Document
+from db import DatabaseBackend, Document
 
 from .config import RAGConfig
 
@@ -13,7 +13,7 @@ from .config import RAGConfig
 @dataclass(frozen=True)
 class IngestResult:
     """Result of document ingestion."""
-    
+
     collection: str
     files_indexed: int
     chunks_indexed: int
@@ -34,7 +34,9 @@ class RAGIngester:
         self.config = config
         self.db = db
 
-    def ingest_path(self, path: Path | str, collection: str, max_file_size_mb: int = 1000) -> IngestResult:
+    def ingest_path(
+        self, path: Path | str, collection: str, max_file_size_mb: int = 1000
+    ) -> IngestResult:
         """Ingest documents from a file or directory.
 
         Args:
@@ -59,7 +61,7 @@ class RAGIngester:
             if file_size > max_size_bytes:
                 raise ValueError(
                     f"File '{source.name}' exceeds maximum size of {max_file_size_mb}MB "
-                    f"({file_size / (1024*1024):.1f}MB)"
+                    f"({file_size / (1024 * 1024):.1f}MB)"
                 )
         else:
             # For directories, check each file
@@ -69,7 +71,7 @@ class RAGIngester:
                     if file_size > max_size_bytes:
                         raise ValueError(
                             f"File '{file_path.name}' exceeds maximum size of {max_file_size_mb}MB "
-                            f"({file_size / (1024*1024):.1f}MB)"
+                            f"({file_size / (1024 * 1024):.1f}MB)"
                         )
 
         # Get full collection name with prefix
@@ -81,7 +83,7 @@ class RAGIngester:
 
         # Collect all files to process
         files = list(self._iter_source_files(source))
-        
+
         documents = []
         files_indexed = 0
 
@@ -97,13 +99,15 @@ class RAGIngester:
                 continue
 
             files_indexed += 1
-            
+
             # Create document for each chunk
-            relative_path = str(file_path.relative_to(source)) if file_path != source else file_path.name
-            
+            relative_path = (
+                str(file_path.relative_to(source)) if file_path != source else file_path.name
+            )
+
             for i, chunk_text in enumerate(chunks):
                 doc_id = self._build_chunk_id(full_collection, relative_path, i, chunk_text)
-                
+
                 documents.append(
                     Document(
                         id=doc_id,
@@ -145,7 +149,7 @@ class RAGIngester:
         files = []
         for ext in self.SUPPORTED_EXTENSIONS:
             files.extend(path.rglob(f"*{ext}"))
-        
+
         return sorted(files)
 
     def _read_file(self, file_path: Path) -> str:
@@ -158,7 +162,7 @@ class RAGIngester:
             File content as text
         """
         suffix = file_path.suffix.lower()
-        
+
         if suffix in {".md", ".txt"}:
             return file_path.read_text(encoding="utf-8")
         elif suffix == ".pdf":
@@ -179,8 +183,7 @@ class RAGIngester:
             import pypdf
         except ImportError:
             raise ImportError(
-                "pypdf is required for PDF ingestion. "
-                "Install with: pip install pypdf"
+                "pypdf is required for PDF ingestion. Install with: pip install pypdf"
             )
 
         reader = pypdf.PdfReader(str(file_path))
@@ -189,7 +192,7 @@ class RAGIngester:
             text = page.extract_text()
             if text:
                 pages.append(text)
-        
+
         return "\n\n".join(pages)
 
     def _chunk_text(self, text: str) -> list[str]:
@@ -203,20 +206,20 @@ class RAGIngester:
         """
         chunk_size = self.config.chunking.size
         overlap = self.config.chunking.overlap
-        
+
         # Simple character-based chunking
         chunks = []
         start = 0
-        
+
         while start < len(text):
             end = start + chunk_size
             chunk = text[start:end]
-            
+
             if chunk.strip():
                 chunks.append(chunk)
-            
+
             start = end - overlap
-            
+
             # Prevent infinite loop
             if overlap >= chunk_size:
                 break

@@ -58,6 +58,9 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [project.scripts]
+# Unified CLI (cross-platform entry point)
+corpus = "cli:main"
+
 # MCP Server
 corpus-mcp-server = "mcp_server.server:main"
 

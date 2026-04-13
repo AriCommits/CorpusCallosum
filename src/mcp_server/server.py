@@ -13,20 +13,20 @@ from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.fastmcp import FastMCP
 
-from ..config import load_config
-from ..db import ChromaDBBackend
-from ..tools.flashcards import FlashcardConfig, FlashcardGenerator
-from ..tools.quizzes import QuizConfig, QuizGenerator
-from ..tools.rag import RAGAgent, RAGConfig, RAGIngester, RAGRetriever
-from ..tools.summaries import SummaryConfig, SummaryGenerator
-from ..tools.video import (
+from config import load_config
+from db import ChromaDBBackend
+from tools.flashcards import FlashcardConfig, FlashcardGenerator
+from tools.quizzes import QuizConfig, QuizGenerator
+from tools.rag import RAGAgent, RAGConfig, RAGIngester, RAGRetriever
+from tools.summaries import SummaryConfig, SummaryGenerator
+from tools.video import (
     TranscriptAugmenter,
     TranscriptCleaner,
     VideoConfig,
     VideoTranscriber,
 )
-from ..utils.auth import MCPAuthenticator, AuthConfig, add_security_headers
-from ..utils.validation import get_validator
+from utils.auth import MCPAuthenticator, AuthConfig, add_security_headers
+from utils.validation import get_validator
 
 
 def create_mcp_server(config_path: str | None = None) -> FastMCP:
@@ -34,13 +34,14 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
     Create and configure the MCP server with all Corpus Callosum tools.
 
     Args:
-        config_path: Optional path to configuration file
+        config_path: Optional path to configuration file (defaults to configs/base.yaml)
 
     Returns:
         Configured FastMCP server instance
     """
     # Load configuration
-    config = load_config(config_path)
+    effective_path = Path(config_path) if config_path is not None else Path("configs/base.yaml")
+    config = load_config(effective_path)
 
     # Initialize database backend
     db = ChromaDBBackend(config.database)
@@ -51,13 +52,13 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         api_keys={},  # Will be populated by admin key generation
         rate_limit_enabled=True,
         requests_per_minute=100,
-        requests_per_hour=1000
+        requests_per_hour=1000,
     )
-    
+
     # Create authentication system
     auth_file = Path.home() / ".corpus_callosum" / "api_keys.json"
     authenticator = MCPAuthenticator(auth_config, auth_file)
-    
+
     # Generate admin key on first run if no keys exist
     if not authenticator.api_key_manager.api_keys:
         admin_key = authenticator.create_admin_key()
@@ -69,7 +70,7 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         "Corpus Callosum",
         json_response=True,
     )
-    
+
     # Add authentication dependency to all tools
     auth_dep = Depends(authenticator.authenticate_request)
 
@@ -95,17 +96,18 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
 
         Returns:
             Ingestion result with document count and status
-            
+
         Raises:
             SecurityError: If file path is unsafe
         """
         # Validate file path for security
-        from ..utils.security import validate_file_path, SecurityError
+        from utils.security import validate_file_path, SecurityError
+
         try:
             validated_path = validate_file_path(path, must_exist=True)
         except Exception as e:
             raise SecurityError(f"Invalid file path: {e}")
-        
+
         rag_config = RAGConfig.from_dict(config.to_dict())
         rag_config.chunking.size = chunk_size
         rag_config.chunking.overlap = chunk_overlap
@@ -487,7 +489,7 @@ This will create a comprehensive study resource from the lecture.
 """
 
     # Add security middleware and headers
-    if hasattr(mcp, 'app') and isinstance(mcp.app, FastAPI):
+    if hasattr(mcp, "app") and isinstance(mcp.app, FastAPI):
         # Add CORS middleware with security
         mcp.app.add_middleware(
             CORSMiddleware,
@@ -496,7 +498,7 @@ This will create a comprehensive study resource from the lecture.
             allow_methods=["GET", "POST"],
             allow_headers=["Authorization", "X-API-Key", "Content-Type"],
         )
-        
+
         # Add security headers middleware
         @mcp.app.middleware("http")
         async def add_security_headers_middleware(request: Request, call_next):
@@ -522,9 +524,10 @@ def main() -> None:
 
     # Create MCP server
     mcp = create_mcp_server(args.config)
-    
+
     # Add health endpoints to the underlying FastAPI app
-    if hasattr(mcp, 'app') and isinstance(mcp.app, FastAPI):
+    if hasattr(mcp, "app") and isinstance(mcp.app, FastAPI):
+
         @mcp.app.get("/health")
         async def health_check():
             """Health check endpoint for container orchestration."""
@@ -532,26 +535,22 @@ def main() -> None:
                 "status": "healthy",
                 "service": "corpus-callosum-mcp",
                 "version": "0.5.0",
-                "timestamp": "2026-04-07"
+                "timestamp": "2026-04-07",
             }
-        
-        @mcp.app.get("/health/ready")  
+
+        @mcp.app.get("/health/ready")
         async def readiness_check():
             """Readiness check endpoint."""
             try:
                 # Test database connection
-                from ..config import load_config
-                from ..db import ChromaDBBackend
-                
+                from config import load_config
+                from db import ChromaDBBackend
+
                 config = load_config(args.config)
                 db = ChromaDBBackend(config.database)
                 collections = db.list_collections()
-                
-                return {
-                    "status": "ready",
-                    "database": "connected",
-                    "collections": len(collections)
-                }
+
+                return {"status": "ready", "database": "connected", "collections": len(collections)}
             except Exception as e:
                 logger.error(f"Readiness check failed: {e}")
                 return {"status": "not_ready", "error": str(e)}

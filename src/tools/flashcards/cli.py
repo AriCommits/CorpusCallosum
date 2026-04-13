@@ -5,8 +5,8 @@ from pathlib import Path
 
 import click
 
-from corpus_callosum.config.loader import load_config
-from corpus_callosum.db.chroma import ChromaDBBackend
+from config.loader import load_config
+from db.chroma import ChromaDBBackend
 
 from .config import FlashcardConfig
 from .generator import FlashcardGenerator
@@ -23,18 +23,18 @@ def flashcards(collection: str, output: str, config: str, difficulty: str, count
     # Load config
     config_data = load_config(config)
     cfg = FlashcardConfig.from_dict(config_data)
-    
+
     # Initialize database and generator
     db = ChromaDBBackend(cfg.database)
     generator = FlashcardGenerator(cfg, db)
-    
+
     # Generate flashcards
     click.echo(f"Generating {count or cfg.cards_per_topic} flashcards from '{collection}'...")
     cards = generator.generate(collection, difficulty=difficulty, count=count)
-    
+
     # Format output
     formatted = generator.format_flashcards(cards)
-    
+
     # Write or print
     if output:
         Path(output).write_text(formatted)

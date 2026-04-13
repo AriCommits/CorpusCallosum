@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import chromadb
 from chromadb.api import ClientAPI
 
-from ..config.base import DatabaseConfig
+from config.base import DatabaseConfig
 
 from .base import DatabaseBackend
 
@@ -22,9 +22,7 @@ class ChromaDBBackend(DatabaseBackend):
         self.config = config
 
         if config.mode == "persistent":
-            self.client: ClientAPI = chromadb.PersistentClient(
-                path=str(config.persist_directory)
-            )
+            self.client: ClientAPI = chromadb.PersistentClient(path=str(config.persist_directory))
         elif config.mode == "http":
             self.client = chromadb.HttpClient(
                 host=config.host,
@@ -33,9 +31,7 @@ class ChromaDBBackend(DatabaseBackend):
         else:
             raise ValueError(f"Unknown database mode: {config.mode}")
 
-    def create_collection(
-        self, name: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def create_collection(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Create a new collection.
 
         Args:
@@ -46,7 +42,12 @@ class ChromaDBBackend(DatabaseBackend):
             ValueError: If collection already exists
         """
         try:
-            self.client.create_collection(name=name, metadata=metadata or {})
+            # ChromaDB requires non-empty metadata or no metadata kwarg at all
+            meta = metadata or None
+            if meta:
+                self.client.create_collection(name=name, metadata=meta)
+            else:
+                self.client.create_collection(name=name)
         except Exception as e:
             if "already exists" in str(e).lower():
                 raise ValueError(f"Collection '{name}' already exists")
@@ -116,15 +117,15 @@ class ChromaDBBackend(DatabaseBackend):
             ValueError: If collection doesn't exist or lengths don't match
         """
         if not (len(documents) == len(embeddings) == len(metadata) == len(ids)):
-            raise ValueError(
-                "documents, embeddings, metadata, and ids must have same length"
-            )
+            raise ValueError("documents, embeddings, metadata, and ids must have same length")
 
         col = self.get_collection(collection)
+        # ChromaDB requires non-empty metadata dicts; fill empty ones with a sentinel
+        safe_metadata = [m if m else {"_source": "unknown"} for m in metadata]
         col.add(
             documents=documents,
             embeddings=embeddings,
-            metadatas=metadata,
+            metadatas=safe_metadata,
             ids=ids,
         )
 

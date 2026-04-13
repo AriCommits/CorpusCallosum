@@ -6,7 +6,7 @@ Provides standardized prompts for various content generation tasks.
 
 from typing import Any
 
-from src.utils.validation import get_validator
+from utils.validation import get_validator
 
 
 class PromptTemplates:

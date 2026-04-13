@@ -5,8 +5,8 @@ from pathlib import Path
 
 import click
 
-from corpus_callosum.config.loader import load_config
-from corpus_callosum.db.chroma import ChromaDBBackend
+from config.loader import load_config
+from db.chroma import ChromaDBBackend
 
 from .agent import RAGAgent
 from .config import RAGConfig
@@ -28,15 +28,15 @@ def ingest(path: str, collection: str, config: str):
     # Load config
     config_data = load_config(config)
     cfg = RAGConfig.from_dict(config_data)
-    
+
     # Initialize database and ingester
     db = ChromaDBBackend(cfg.database)
     ingester = RAGIngester(cfg, db)
-    
+
     # Ingest documents
     click.echo(f"Ingesting documents from {path} into collection '{collection}'...")
     result = ingester.ingest_path(Path(path), collection)
-    
+
     click.echo(f"✓ Indexed {result.files_indexed} files, {result.chunks_indexed} chunks")
 
 
@@ -50,15 +50,15 @@ def query(query: str, collection: str, top_k: int, config: str):
     # Load config
     config_data = load_config(config)
     cfg = RAGConfig.from_dict(config_data)
-    
+
     # Initialize database and agent
     db = ChromaDBBackend(cfg.database)
     agent = RAGAgent(cfg, db)
-    
+
     # Execute query
     click.echo(f"Querying collection '{collection}'...\n")
     response, chunks = agent.query(query, collection, top_k=top_k)
-    
+
     # Display results
     click.echo("Response:")
     click.echo(response)
@@ -73,25 +73,25 @@ def chat(collection: str, config: str):
     # Load config
     config_data = load_config(config)
     cfg = RAGConfig.from_dict(config_data)
-    
+
     # Initialize database and agent
     db = ChromaDBBackend(cfg.database)
     agent = RAGAgent(cfg, db)
-    
+
     click.echo(f"RAG Chat - Collection: {collection}")
     click.echo("Type 'exit' or 'quit' to end the session\n")
-    
+
     while True:
         try:
             message = click.prompt("You", type=str)
             if message.lower() in ["exit", "quit"]:
                 break
-            
+
             response = agent.chat(message, collection)
             click.echo(f"Agent: {response}\n")
         except (KeyboardInterrupt, EOFError):
             break
-    
+
     click.echo("\nGoodbye!")
 
 

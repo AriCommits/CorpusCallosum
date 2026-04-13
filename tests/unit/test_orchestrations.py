@@ -3,9 +3,9 @@
 import pytest
 from pathlib import Path
 
-from corpus_callosum.config import BaseConfig, DatabaseConfig
-from corpus_callosum.db import ChromaDBBackend
-from corpus_callosum.orchestrations import (
+from config import BaseConfig, DatabaseConfig
+from db import ChromaDBBackend
+from orchestrations import (
     StudySessionOrchestrator,
     KnowledgeBaseOrchestrator,
     LecturePipelineOrchestrator,
@@ -13,13 +13,12 @@ from corpus_callosum.orchestrations import (
 
 
 @pytest.fixture
-def base_config():
+def base_config(tmp_path):
     """Create a test configuration."""
     return BaseConfig(
         database=DatabaseConfig(
-            mode="ephemeral",
-            host="localhost",
-            port=8000,
+            mode="persistent",
+            persist_directory=tmp_path / "chroma",
         )
     )
 
@@ -33,7 +32,7 @@ def db_backend(base_config):
 def test_study_session_orchestrator_creation(base_config, db_backend):
     """Test creating a study session orchestrator."""
     orchestrator = StudySessionOrchestrator(base_config, db_backend)
-    
+
     assert orchestrator is not None
     assert orchestrator.config == base_config
     assert orchestrator.db == db_backend
@@ -42,7 +41,7 @@ def test_study_session_orchestrator_creation(base_config, db_backend):
 def test_study_session_format(base_config, db_backend):
     """Test formatting a study session."""
     orchestrator = StudySessionOrchestrator(base_config, db_backend)
-    
+
     session = {
         "collection": "test_collection",
         "topic": "Test Topic",
@@ -50,9 +49,9 @@ def test_study_session_format(base_config, db_backend):
         "flashcards": "Q: Question?\nA: Answer",
         "quiz": "1. Test question?",
     }
-    
+
     formatted = orchestrator.format_session(session)
-    
+
     assert "test_collection" in formatted
     assert "Test Topic" in formatted
     assert "This is a summary" in formatted
@@ -62,7 +61,7 @@ def test_study_session_format(base_config, db_backend):
 def test_knowledge_base_orchestrator_creation(base_config, db_backend):
     """Test creating a knowledge base orchestrator."""
     orchestrator = KnowledgeBaseOrchestrator(base_config, db_backend)
-    
+
     assert orchestrator is not None
     assert orchestrator.config == base_config
     assert orchestrator.db == db_backend
@@ -71,17 +70,17 @@ def test_knowledge_base_orchestrator_creation(base_config, db_backend):
 def test_knowledge_base_list_collections(base_config, db_backend):
     """Test listing collections."""
     orchestrator = KnowledgeBaseOrchestrator(base_config, db_backend)
-    
+
     # Initially should be empty or have test collections
     collections = orchestrator.list_collections()
-    
+
     assert isinstance(collections, list)
 
 
 def test_lecture_pipeline_orchestrator_creation(base_config, db_backend):
     """Test creating a lecture pipeline orchestrator."""
     orchestrator = LecturePipelineOrchestrator(base_config, db_backend)
-    
+
     assert orchestrator is not None
     assert orchestrator.config == base_config
     assert orchestrator.db == db_backend
@@ -90,7 +89,7 @@ def test_lecture_pipeline_orchestrator_creation(base_config, db_backend):
 def test_lecture_pipeline_format(base_config, db_backend):
     """Test formatting lecture materials."""
     orchestrator = LecturePipelineOrchestrator(base_config, db_backend)
-    
+
     result = {
         "course": "CS101",
         "lecture_num": 1,
@@ -101,9 +100,9 @@ def test_lecture_pipeline_format(base_config, db_backend):
         "flashcards": "Q: Question?\nA: Answer",
         "quiz": "1. Test question?",
     }
-    
+
     formatted = orchestrator.format_lecture_materials(result)
-    
+
     assert "CS101 - Lecture 1" in formatted
     assert "This is a transcript" in formatted
     assert "This is a summary" in formatted

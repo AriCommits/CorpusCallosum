@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from corpus_callosum.config.base import BaseConfig
+from config.base import BaseConfig
 
 
 @dataclass

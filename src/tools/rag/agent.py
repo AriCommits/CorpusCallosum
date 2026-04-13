@@ -2,8 +2,8 @@
 
 from typing import Any, Iterator, Optional
 
-from corpus_callosum.db import DatabaseBackend
-from corpus_callosum.llm import create_backend, PromptTemplates
+from db import DatabaseBackend
+from llm import create_backend, PromptTemplates
 
 from .config import RAGConfig
 from .retriever import RAGRetriever, RetrievedChunk
@@ -52,11 +52,13 @@ class RAGAgent:
             # Convert chunks to format expected by prompt template
             context_chunks = []
             for chunk in chunks:
-                context_chunks.append({
-                    "text": chunk.text,
-                    "source": chunk.metadata.get("source_file", "unknown"),
-                    "score": chunk.score,
-                })
+                context_chunks.append(
+                    {
+                        "text": chunk.text,
+                        "source": chunk.metadata.get("source_file", "unknown"),
+                        "score": chunk.score,
+                    }
+                )
 
             # Build prompt with context using the prompt template
             prompt = PromptTemplates.rag_response(
@@ -98,27 +100,26 @@ class RAGAgent:
         # TODO: Implement proper conversation history storage
         # For now, just use single query
         conversation_history = None
-        
+
         if session_id:
             # Placeholder for loading conversation history
             # In full implementation, this would load from storage
             conversation_history = []
-        
+
         response = self.query(
-            message, 
-            collection, 
-            stream=stream, 
-            conversation_history=conversation_history
+            message, collection, stream=stream, conversation_history=conversation_history
         )
-        
+
         if session_id:
             # Placeholder for saving conversation history
             # In full implementation, this would save to storage
             pass
-        
+
         return response
 
-    def retrieve(self, query: str, collection: str, top_k: Optional[int] = None) -> list[RetrievedChunk]:
+    def retrieve(
+        self, query: str, collection: str, top_k: Optional[int] = None
+    ) -> list[RetrievedChunk]:
         """Retrieve relevant chunks without generating a response.
 
         Args:

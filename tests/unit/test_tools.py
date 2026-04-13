@@ -5,37 +5,37 @@ import pytest
 
 def test_flashcards_imports():
     """Test flashcards tool imports."""
-    from corpus_callosum.tools.flashcards import FlashcardConfig, FlashcardGenerator
-    
+    from tools.flashcards import FlashcardConfig, FlashcardGenerator
+
     assert FlashcardConfig is not None
     assert FlashcardGenerator is not None
 
 
 def test_summaries_imports():
     """Test summaries tool imports."""
-    from corpus_callosum.tools.summaries import SummaryConfig, SummaryGenerator
-    
+    from tools.summaries import SummaryConfig, SummaryGenerator
+
     assert SummaryConfig is not None
     assert SummaryGenerator is not None
 
 
 def test_quizzes_imports():
     """Test quizzes tool imports."""
-    from corpus_callosum.tools.quizzes import QuizConfig, QuizGenerator
-    
+    from tools.quizzes import QuizConfig, QuizGenerator
+
     assert QuizConfig is not None
     assert QuizGenerator is not None
 
 
 def test_video_imports():
     """Test video tool imports."""
-    from corpus_callosum.tools.video import (
+    from tools.video import (
         VideoConfig,
         VideoTranscriber,
         TranscriptCleaner,
         TranscriptAugmenter,
     )
-    
+
     assert VideoConfig is not None
     assert VideoTranscriber is not None
     assert TranscriptCleaner is not None
@@ -44,7 +44,7 @@ def test_video_imports():
 
 def test_rag_imports():
     """Test RAG tool imports."""
-    from corpus_callosum.tools.rag import (
+    from tools.rag import (
         RAGConfig,
         RAGAgent,
         RAGRetriever,
@@ -52,7 +52,7 @@ def test_rag_imports():
         IngestResult,
         RetrievedChunk,
     )
-    
+
     assert RAGConfig is not None
     assert RAGAgent is not None
     assert RAGRetriever is not None
@@ -63,14 +63,14 @@ def test_rag_imports():
 
 def test_flashcards_config_creation():
     """Test flashcards config from dict."""
-    from corpus_callosum.tools.flashcards import FlashcardConfig
-    
+    from tools.flashcards import FlashcardConfig
+
     data = {
-        "llm": {"provider": "ollama", "model": "qwen3:8b"},
+        "llm": {"backend": "ollama", "model": "qwen3:8b"},
         "database": {"backend": "chroma", "persist_directory": "./data/chroma"},
         "flashcards": {"cards_per_topic": 20, "format": "anki"},
     }
-    
+
     config = FlashcardConfig.from_dict(data)
     assert config.cards_per_topic == 20
     assert config.format == "anki"
@@ -79,14 +79,14 @@ def test_flashcards_config_creation():
 
 def test_quiz_config_creation():
     """Test quiz config from dict."""
-    from corpus_callosum.tools.quizzes import QuizConfig
-    
+    from tools.quizzes import QuizConfig
+
     data = {
-        "llm": {"provider": "ollama", "model": "qwen3:8b"},
+        "llm": {"backend": "ollama", "model": "qwen3:8b"},
         "database": {"backend": "chroma", "persist_directory": "./data/chroma"},
         "quizzes": {"questions_per_topic": 20, "format": "json"},
     }
-    
+
     config = QuizConfig.from_dict(data)
     assert config.questions_per_topic == 20
     assert config.format == "json"
@@ -94,14 +94,14 @@ def test_quiz_config_creation():
 
 def test_video_config_creation():
     """Test video config from dict."""
-    from corpus_callosum.tools.video import VideoConfig
-    
+    from tools.video import VideoConfig
+
     data = {
-        "llm": {"provider": "ollama", "model": "qwen3:8b"},
+        "llm": {"backend": "ollama", "model": "qwen3:8b"},
         "database": {"backend": "chroma", "persist_directory": "./data/chroma"},
         "video": {"whisper_model": "large", "whisper_device": "cpu"},
     }
-    
+
     config = VideoConfig.from_dict(data)
     assert config.whisper_model == "large"
     assert config.whisper_device == "cpu"
@@ -109,18 +109,17 @@ def test_video_config_creation():
 
 def test_rag_config_creation():
     """Test RAG config from dict."""
-    from corpus_callosum.tools.rag import RAGConfig
-    
+    from tools.rag import RAGConfig
+
+    # RAGConfig.from_dict reads "chunking" and "retrieval" as top-level keys
     data = {
-        "llm": {"provider": "ollama", "model": "qwen3:8b"},
+        "llm": {"backend": "ollama", "model": "qwen3:8b"},
         "database": {"backend": "chroma", "persist_directory": "./data/chroma"},
-        "rag": {
-            "chunking": {"chunk_size": 1000, "overlap": 100},
-            "retrieval": {"top_k": 10},
-        },
+        "chunking": {"size": 1000, "overlap": 100},
+        "retrieval": {"top_k_semantic": 10},
     }
-    
+
     config = RAGConfig.from_dict(data)
-    assert config.chunking.chunk_size == 1000
+    assert config.chunking.size == 1000
     assert config.chunking.overlap == 100
-    assert config.retrieval.top_k == 10
+    assert config.retrieval.top_k_semantic == 10

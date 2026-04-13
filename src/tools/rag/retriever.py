@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from corpus_callosum.db import DatabaseBackend
+from db import DatabaseBackend
 
 from .config import RAGConfig
 
@@ -11,7 +11,7 @@ from .config import RAGConfig
 @dataclass(frozen=True)
 class RetrievedChunk:
     """A retrieved document chunk."""
-    
+
     id: str
     text: str
     metadata: dict[str, Any]
@@ -97,7 +97,7 @@ class RAGRetriever:
         # 2. Retrieve all documents from collection
         # 3. Build BM25 index
         # 4. Rank documents and return top-k
-        
+
         return []
 
     def hybrid_search(
@@ -118,7 +118,7 @@ class RAGRetriever:
         # 1. Run both semantic and BM25 search
         # 2. Combine results using Reciprocal Rank Fusion (RRF)
         # 3. Return top-k results
-        
+
         return self.semantic_search(query, collection, top_k)
 
     def retrieve(

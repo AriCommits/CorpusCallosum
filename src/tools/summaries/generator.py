@@ -4,8 +4,8 @@ import logging
 import re
 from typing import Any, Optional
 
-from corpus_callosum.db import DatabaseBackend
-from corpus_callosum.llm import create_backend, PromptTemplates
+from db import DatabaseBackend
+from llm import create_backend, PromptTemplates
 
 from .config import SummaryConfig
 
@@ -47,27 +47,27 @@ class SummaryGenerator:
         try:
             # Get document count to determine sampling strategy
             doc_count = self.db.count_documents(full_collection)
-            
+
             if doc_count == 0:
                 logger.warning(f"No documents found in collection '{full_collection}'")
                 return self._generate_placeholder_summary(collection, topic)
-            
+
             # Get a representative sample of documents
             # For summary, we want broader coverage than specific search
             sample_size = min(20, max(5, doc_count // 10))  # 10% of docs, between 5-20
-            
+
             # Get documents by querying for general terms or using pagination
             document_texts = self._get_representative_documents(full_collection, sample_size, topic)
-            
+
             if not document_texts:
                 logger.warning(f"Could not retrieve documents from '{full_collection}'")
                 return self._generate_placeholder_summary(collection, topic)
-            
+
             # Generate summary using LLM
             summary_text = self._generate_with_llm(
                 document_texts, length=self.config.summary_length, topic=topic
             )
-            
+
             # Build result dict
             result: dict[str, Any] = {
                 "summary": summary_text,
@@ -80,9 +80,9 @@ class SummaryGenerator:
 
             if self.config.include_outline:
                 result["outline"] = self._generate_outline(summary_text)
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
             # Fall back to placeholder summary
@@ -92,26 +92,26 @@ class SummaryGenerator:
         self, full_collection: str, sample_size: int, topic: Optional[str] = None
     ) -> list[str]:
         """Get representative documents from collection.
-        
+
         Args:
             full_collection: Full collection name with prefix
             sample_size: Number of documents to sample
             topic: Optional topic to focus on
-            
+
         Returns:
             List of document texts
         """
         try:
             # For now, use a simple approach - get all documents and sample
             # In a real implementation, you'd want smarter sampling
-            
+
             # Get collection object to access documents directly
             collection_obj = self.db.get_collection(full_collection)
-            
+
             # This is a simplified approach - in practice you'd implement
             # better document sampling or use the collection's get() method
             # with limit and offset for pagination
-            
+
             # For now, return placeholder approach
             # TODO: Implement proper document sampling based on the actual database backend
             return [
@@ -119,7 +119,7 @@ class SummaryGenerator:
                 f"Another sample document from {full_collection}",
                 f"Topic-related content for {topic or 'general content'}",
             ]
-            
+
         except Exception as e:
             logger.error(f"Error getting documents: {e}")
             return []
@@ -131,12 +131,12 @@ class SummaryGenerator:
         topic: str | None = None,
     ) -> str:
         """Generate summary using LLM.
-        
+
         Args:
             documents: List of document texts
             length: Summary length (short, medium, long)
             topic: Optional topic for focused generation
-            
+
         Returns:
             Generated summary text
         """
@@ -146,23 +146,23 @@ class SummaryGenerator:
             length=length,
             topic=topic,
         )
-        
+
         try:
             # Generate content using LLM
             response = self.llm_backend.complete(prompt)
             return response.text.strip()
-            
+
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             return f"Error generating summary: {e}"
 
     def _extract_keywords(self, summary_text: str, document_texts: list[str]) -> list[str]:
         """Extract keywords from summary and documents.
-        
+
         Args:
             summary_text: Generated summary
             document_texts: Original documents
-            
+
         Returns:
             List of keywords
         """
@@ -180,28 +180,28 @@ INSTRUCTIONS:
 - No explanations, just the keywords
 
 KEYWORDS:"""
-            
+
             response = self.llm_backend.complete(keyword_prompt)
-            
+
             # Parse comma-separated keywords
             keywords_text = response.text.strip()
-            keywords = [kw.strip() for kw in keywords_text.split(',')]
-            
+            keywords = [kw.strip() for kw in keywords_text.split(",")]
+
             # Clean and filter keywords
             keywords = [kw for kw in keywords if kw and len(kw) > 2]
-            
+
             return keywords[:12]  # Limit to 12 keywords
-            
+
         except Exception as e:
             logger.error(f"Error extracting keywords: {e}")
             return ["summary", "overview", "key points"]
 
     def _generate_outline(self, summary_text: str) -> list[str]:
         """Generate an outline from the summary.
-        
+
         Args:
             summary_text: Generated summary
-            
+
         Returns:
             List of outline points
         """
@@ -220,21 +220,23 @@ INSTRUCTIONS:
 - Focus on logical structure and flow
 
 OUTLINE:"""
-            
+
             response = self.llm_backend.complete(outline_prompt)
-            
+
             # Split into lines and clean up
-            outline_lines = [line.strip() for line in response.text.split('\n')]
-            outline_lines = [line for line in outline_lines if line and not line.lower().startswith('outline')]
-            
+            outline_lines = [line.strip() for line in response.text.split("\n")]
+            outline_lines = [
+                line for line in outline_lines if line and not line.lower().startswith("outline")
+            ]
+
             return outline_lines[:15]  # Limit to reasonable length
-            
+
         except Exception as e:
             logger.error(f"Error generating outline: {e}")
             return [
                 "I. Introduction",
                 "II. Main Points",
-                "III. Key Concepts", 
+                "III. Key Concepts",
                 "IV. Conclusion",
             ]
 
@@ -242,16 +244,16 @@ OUTLINE:"""
         self, collection: str, topic: Optional[str] = None
     ) -> dict[str, Any]:
         """Generate placeholder summary as fallback.
-        
+
         Args:
             collection: Collection name
             topic: Optional topic
-            
+
         Returns:
             Placeholder summary dictionary
         """
         topic_text = f" - {topic}" if topic else ""
-        
+
         result: dict[str, Any] = {
             "summary": (
                 f"Summary of {collection}{topic_text}\n\n"

@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Optional
 
 from .config import VideoConfig
-from ...utils.security import (
-    get_safe_editor, 
-    safe_subprocess_run, 
+from utils.security import (
+    get_safe_editor,
+    safe_subprocess_run,
     validate_file_path,
     SecurityError,
-    CommandInjectionError
+    CommandInjectionError,
 )
 
 
@@ -32,7 +32,7 @@ class TranscriptAugmenter:
 
         Args:
             file_path: Path to file to open
-            
+
         Raises:
             SecurityError: If editor command is unsafe
             CommandInjectionError: If no safe editor is available
@@ -42,9 +42,9 @@ class TranscriptAugmenter:
             validated_path = validate_file_path(file_path, must_exist=True)
         except Exception as e:
             raise SecurityError(f"Invalid file path: {e}")
-        
+
         system = platform.system()
-        
+
         try:
             if system == "Windows":
                 # Use os.startfile for Windows (safer than subprocess for this use case)
@@ -78,7 +78,7 @@ class TranscriptAugmenter:
 
         Returns:
             Path to final augmented transcript
-            
+
         Raises:
             SecurityError: If file paths are invalid or unsafe
             FileNotFoundError: If transcript file doesn't exist
@@ -96,13 +96,13 @@ class TranscriptAugmenter:
             print("Add your annotations, then save and close.")
             print("Press Enter to continue...")
             input()
-            
+
             try:
                 self.open_in_editor(transcript_path)
             except SecurityError as e:
                 print(f"⚠️  Security Error: {e}")
                 print("Please edit the file manually and press Enter when done.")
-            
+
             print("\nPress Enter when you have finished editing...")
             input()
 
@@ -111,7 +111,9 @@ class TranscriptAugmenter:
 
         # Determine and validate output path
         if output_path is None:
-            output_path = transcript_path.parent / f"{transcript_path.stem}_final{transcript_path.suffix}"
+            output_path = (
+                transcript_path.parent / f"{transcript_path.stem}_final{transcript_path.suffix}"
+            )
         else:
             output_path = Path(output_path)
             # Validate output path (allow creation of new files)
@@ -119,7 +121,7 @@ class TranscriptAugmenter:
                 output_path = validate_file_path(output_path, must_exist=False)
             except Exception as e:
                 raise SecurityError(f"Invalid output path: {e}")
-            
+
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Check for overwrite
@@ -127,7 +129,10 @@ class TranscriptAugmenter:
             response = input(f"\n{output_path.name} already exists. Overwrite? [y/N]: ")
             if response.lower() not in ["y", "yes"]:
                 # Save to scratch instead
-                fallback = transcript_path.parent / f"{transcript_path.stem}_fallback{transcript_path.suffix}"
+                fallback = (
+                    transcript_path.parent
+                    / f"{transcript_path.stem}_fallback{transcript_path.suffix}"
+                )
                 fallback.write_text(final_content, encoding="utf-8")
                 print(f"Saved to: {fallback}")
                 return fallback
@@ -135,5 +140,5 @@ class TranscriptAugmenter:
         # Write final transcript
         output_path.write_text(final_content, encoding="utf-8")
         print(f"\n✓ Final transcript written to: {output_path}")
-        
+
         return output_path

@@ -4,8 +4,8 @@ import logging
 import re
 from typing import Optional
 
-from corpus_callosum.db import DatabaseBackend
-from corpus_callosum.llm import create_backend, PromptTemplates
+from db import DatabaseBackend
+from llm import create_backend, PromptTemplates
 
 from .config import FlashcardConfig
 
@@ -59,28 +59,30 @@ class FlashcardGenerator:
                 query="main concepts key ideas important information",
                 top_k=10,
             )
-            
+
             if not sample_docs:
                 logger.warning(f"No documents found in collection '{full_collection}'")
                 return self._generate_placeholder_flashcards(count, difficulty, collection)
-            
+
             # Extract document texts
             document_texts = [doc.text for doc in sample_docs]
-            
+
             # Generate flashcards using LLM
             flashcards = self._generate_with_llm(
                 document_texts, difficulty=difficulty, count=count, topic=collection
             )
-            
+
             # Add metadata to each flashcard
             for card in flashcards:
-                card.update({
-                    "difficulty": difficulty,
-                    "collection": collection,
-                })
-            
+                card.update(
+                    {
+                        "difficulty": difficulty,
+                        "collection": collection,
+                    }
+                )
+
             return flashcards
-            
+
         except Exception as e:
             logger.error(f"Error generating flashcards: {e}")
             # Fall back to placeholder flashcards
@@ -94,13 +96,13 @@ class FlashcardGenerator:
         topic: str | None = None,
     ) -> list[dict[str, str]]:
         """Generate flashcards using LLM.
-        
+
         Args:
             documents: List of document texts
             difficulty: Difficulty level
             count: Number of flashcards to generate
             topic: Optional topic for focused generation
-            
+
         Returns:
             List of flashcard dictionaries
         """
@@ -111,14 +113,14 @@ class FlashcardGenerator:
             count=count,
             topic=topic,
         )
-        
+
         try:
             # Generate content using LLM
             response = self.llm_backend.complete(prompt)
-            
+
             # Parse the response into flashcards
             flashcards = self._parse_flashcard_response(response.text)
-            
+
             # Ensure we have the right number of flashcards
             if len(flashcards) < count:
                 logger.warning(
@@ -127,16 +129,18 @@ class FlashcardGenerator:
                 )
                 # Pad with placeholders if needed
                 for i in range(len(flashcards), count):
-                    flashcards.append({
-                        "front": f"Additional Question {i+1-len(flashcards)} ({difficulty})",
-                        "back": f"Additional Answer {i+1-len(flashcards)}",
-                    })
+                    flashcards.append(
+                        {
+                            "front": f"Additional Question {i + 1 - len(flashcards)} ({difficulty})",
+                            "back": f"Additional Answer {i + 1 - len(flashcards)}",
+                        }
+                    )
             elif len(flashcards) > count:
                 # Trim to requested count
                 flashcards = flashcards[:count]
-            
+
             return flashcards
-            
+
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             # Fall back to placeholder generation
@@ -144,53 +148,55 @@ class FlashcardGenerator:
 
     def _parse_flashcard_response(self, response_text: str) -> list[dict[str, str]]:
         """Parse LLM response into flashcard format.
-        
+
         Args:
             response_text: Raw LLM response text
-            
+
         Returns:
             List of flashcard dictionaries
         """
         flashcards = []
-        
+
         # Split response into potential flashcard sections
-        sections = re.split(r'\n\s*---\s*\n|\n\n+', response_text)
-        
+        sections = re.split(r"\n\s*---\s*\n|\n\n+", response_text)
+
         for section in sections:
             section = section.strip()
             if not section:
                 continue
-                
+
             # Look for Q: ... A: ... pattern
-            q_match = re.search(r'Q:\s*(.+?)(?=A:|$)', section, re.DOTALL | re.IGNORECASE)
-            a_match = re.search(r'A:\s*(.+?)(?=Q:|$)', section, re.DOTALL | re.IGNORECASE)
-            
+            q_match = re.search(r"Q:\s*(.+?)(?=A:|$)", section, re.DOTALL | re.IGNORECASE)
+            a_match = re.search(r"A:\s*(.+?)(?=Q:|$)", section, re.DOTALL | re.IGNORECASE)
+
             if q_match and a_match:
                 question = q_match.group(1).strip()
                 answer = a_match.group(1).strip()
-                
+
                 # Clean up the text (remove extra whitespace, line breaks)
-                question = ' '.join(question.split())
-                answer = ' '.join(answer.split())
-                
+                question = " ".join(question.split())
+                answer = " ".join(answer.split())
+
                 if question and answer:
-                    flashcards.append({
-                        "front": question,
-                        "back": answer,
-                    })
-        
+                    flashcards.append(
+                        {
+                            "front": question,
+                            "back": answer,
+                        }
+                    )
+
         return flashcards
 
     def _generate_placeholder_flashcards(
         self, count: int, difficulty: str, collection: str
     ) -> list[dict[str, str]]:
         """Generate placeholder flashcards as fallback.
-        
+
         Args:
             count: Number of flashcards to generate
             difficulty: Difficulty level
             collection: Collection name
-            
+
         Returns:
             List of placeholder flashcard dictionaries
         """
@@ -198,8 +204,8 @@ class FlashcardGenerator:
         for i in range(count):
             flashcards.append(
                 {
-                    "front": f"Question {i+1} ({difficulty}) - Collection: {collection}",
-                    "back": f"Answer {i+1} - Please regenerate with working LLM connection",
+                    "front": f"Question {i + 1} ({difficulty}) - Collection: {collection}",
+                    "back": f"Answer {i + 1} - Please regenerate with working LLM connection",
                     "difficulty": difficulty,
                     "collection": collection,
                 }

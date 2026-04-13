@@ -1,28 +1,35 @@
-"""Simple test to verify imports work correctly."""
+"""Simple smoke-test to verify package imports work correctly.
+
+Run directly: python tests/test_imports.py
+"""
 
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-try:
-    from corpus_callosum.config import BaseConfig, load_config
-    from corpus_callosum.db import ChromaDBBackend, DatabaseBackend
+def main() -> int:
+    sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-    print("✓ Configuration imports work")
-    print("✓ Database imports work")
+    try:
+        from config import BaseConfig, load_config
+        from db import ChromaDBBackend, DatabaseBackend
 
-    # Test config creation
-    config = BaseConfig()
-    print(f"✓ BaseConfig created: LLM model = {config.llm.model}")
+        print("✓ Configuration imports work")
+        print("✓ Database imports work")
 
-    print("\nAll imports successful!")
-    sys.exit(0)
+        config = BaseConfig()
+        print(f"✓ BaseConfig created: LLM model = {config.llm.model}")
 
-except Exception as e:
-    print(f"✗ Import error: {e}")
-    import traceback
+        print("\nAll imports successful!")
+        return 0
 
-    traceback.print_exc()
-    sys.exit(1)
+    except Exception as e:
+        print(f"✗ Import error: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

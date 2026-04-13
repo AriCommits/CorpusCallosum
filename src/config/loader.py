@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Set, Type, TypeVar
 import yaml
 
 from .base import BaseConfig
-from ..utils.security import PathTraversalError, SecurityError, validate_file_path
+from utils.security import PathTraversalError, SecurityError, validate_file_path
 
 T = TypeVar("T", bound=BaseConfig)
 
@@ -80,12 +80,12 @@ def _scan_for_dangerous_patterns(content: str) -> None:
     """
     for pattern in DANGEROUS_PATTERNS:
         if re.search(pattern, content, re.IGNORECASE):
-            raise SecurityError(
-                f"Suspicious pattern detected in configuration: {pattern}"
-            )
+            raise SecurityError(f"Suspicious pattern detected in configuration: {pattern}")
 
 
-def _check_nesting_depth(obj: Any, max_depth: int = MAX_NESTING_DEPTH, current_depth: int = 0) -> None:
+def _check_nesting_depth(
+    obj: Any, max_depth: int = MAX_NESTING_DEPTH, current_depth: int = 0
+) -> None:
     """Validate nesting depth doesn't exceed maximum.
 
     Args:
@@ -121,8 +121,7 @@ def _validate_config_keys(data: Dict[str, Any]) -> None:
     unknown_keys = set(data.keys()) - ALLOWED_CONFIG_KEYS
     if unknown_keys:
         raise SecurityError(
-            f"Unknown configuration keys: {unknown_keys}. "
-            f"Allowed keys: {ALLOWED_CONFIG_KEYS}"
+            f"Unknown configuration keys: {unknown_keys}. Allowed keys: {ALLOWED_CONFIG_KEYS}"
         )
 
 
@@ -228,14 +227,13 @@ def parse_env_overrides(prefix: str = "CC_") -> Dict[str, Any]:
             continue
 
         # Remove prefix and split by underscore
-        parts = key[len(prefix):].lower().split("_")
+        parts = key[len(prefix) :].lower().split("_")
 
         # Validate key parts are alphanumeric
         for part in parts:
             if not part.isalnum():
                 raise SecurityError(
-                    f"Invalid environment variable format: {key}. "
-                    f"Key parts must be alphanumeric."
+                    f"Invalid environment variable format: {key}. Key parts must be alphanumeric."
                 )
 
         # Validate value length
@@ -252,8 +250,7 @@ def parse_env_overrides(prefix: str = "CC_") -> Dict[str, Any]:
                 current[part] = {}
             elif not isinstance(current[part], dict):
                 raise SecurityError(
-                    f"Configuration conflict: {part} cannot be both "
-                    f"a value and a container"
+                    f"Configuration conflict: {part} cannot be both a value and a container"
                 )
             current = current[part]
 

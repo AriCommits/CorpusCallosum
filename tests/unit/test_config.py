@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from corpus_callosum.config import (
+from config import (
     BaseConfig,
     DatabaseConfig,
     EmbeddingConfig,
@@ -16,8 +16,8 @@ from corpus_callosum.config import (
     load_config,
     merge_configs,
 )
-from corpus_callosum.config.loader import deep_merge, parse_env_overrides
-from corpus_callosum.config.schema import ConfigValidationError, validate_config
+from config.loader import deep_merge, parse_env_overrides
+from config.schema import ConfigValidationError, validate_config
 
 
 class TestLLMConfig:
@@ -249,16 +249,17 @@ class TestParseEnvOverrides:
 
     def test_type_parsing(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test automatic type parsing."""
+        # CC_X_Y parses to nested {"x": {"y": value}}, so use flat names
         monkeypatch.setenv("CC_INT", "42")
         monkeypatch.setenv("CC_FLOAT", "3.14")
-        monkeypatch.setenv("CC_BOOL_TRUE", "true")
-        monkeypatch.setenv("CC_BOOL_FALSE", "false")
+        monkeypatch.setenv("CC_BOOLTRUE", "true")
+        monkeypatch.setenv("CC_BOOLFALSE", "false")
         monkeypatch.setenv("CC_STRING", "hello")
         result = parse_env_overrides()
         assert result["int"] == 42
         assert result["float"] == 3.14
-        assert result["bool_true"] is True
-        assert result["bool_false"] is False
+        assert result["booltrue"] is True
+        assert result["boolfalse"] is False
         assert result["string"] == "hello"
 
 
@@ -293,9 +294,7 @@ class TestLoadConfig:
         assert config.llm.model == "llama3"  # from base
         assert config.llm.temperature == 0.5  # overridden
 
-    def test_load_with_env_override(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_load_with_env_override(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test loading with environment variable override."""
         config_file = tmp_path / "config.yaml"
         config_data = {"llm": {"model": "llama3"}}

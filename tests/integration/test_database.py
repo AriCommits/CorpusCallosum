@@ -6,14 +6,15 @@ from typing import Generator
 
 import pytest
 
-from corpus_callosum.config.base import DatabaseConfig
-from corpus_callosum.db import ChromaDBBackend, DatabaseBackend
+from config.base import DatabaseConfig
+from db import ChromaDBBackend, DatabaseBackend
 
 
 @pytest.fixture
 def temp_db_dir() -> Generator[Path, None, None]:
     """Create temporary database directory."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    # ignore_cleanup_errors avoids Windows file-lock failures on ChromaDB SQLite
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         yield Path(tmpdir)
 
 
@@ -53,9 +54,7 @@ class TestChromaDBBackend:
         with pytest.raises(ValueError, match="already exists"):
             db_backend.create_collection("test_collection")
 
-    def test_create_collection_with_metadata(
-        self, db_backend: ChromaDBBackend
-    ) -> None:
+    def test_create_collection_with_metadata(self, db_backend: ChromaDBBackend) -> None:
         """Test creating collection with metadata."""
         metadata = {"tool": "test", "version": "1.0"}
         db_backend.create_collection("test_collection", metadata=metadata)
@@ -115,9 +114,7 @@ class TestChromaDBBackend:
         count = db_backend.count_documents("test_collection")
         assert count == 3
 
-    def test_add_documents_mismatched_lengths(
-        self, db_backend: ChromaDBBackend
-    ) -> None:
+    def test_add_documents_mismatched_lengths(self, db_backend: ChromaDBBackend) -> None:
         """Test adding documents with mismatched lengths raises error."""
         db_backend.create_collection("test_collection")
 
@@ -254,9 +251,7 @@ class TestChromaDBBackend:
         assert db_backend.count_documents("rag_notes") == 1
 
         # Query one collection shouldn't affect others
-        results = db_backend.query(
-            "flashcards_biology", query_embedding=[0.1, 0.2], n_results=10
-        )
+        results = db_backend.query("flashcards_biology", query_embedding=[0.1, 0.2], n_results=10)
         assert len(results["ids"][0]) == 1
         assert "flashcards_biology" in results["documents"][0][0]
 

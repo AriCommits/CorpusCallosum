@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from corpus_callosum.utils.rate_limiting import (
+from utils.rate_limiting import (
     OperationRateLimiter,
     RateLimitConfig,
 )
