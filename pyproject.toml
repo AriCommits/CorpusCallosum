@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "corpus-callosum"
-version = "0.1.0"
-description = "Collection-scoped local RAG service with hybrid retrieval"
+version = "0.5.0"
+description = "Unified learning and knowledge management toolkit with RAG, flashcards, and video transcription"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -22,6 +22,16 @@ dependencies = [
   "beautifulsoup4>=4.12.0",
   "markdownify>=0.12.0",
   "striprtf>=0.0.26",
+  "click>=8.1.0",
+  "ollama>=0.4.0",
+  "mcp[cli]>=1.20.0",
+  # Security dependencies
+  "keyring>=25.0.0",
+  "cryptography>=41.0.0",
+  "typer[all]>=0.12.0",
+  "rich>=13.0.0",
+  "structlog>=24.0.0",
+  "pydantic>=2.5.0",
 ]
 
 [project.optional-dependencies]
@@ -48,13 +58,25 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [project.scripts]
-corpus-api = "corpus_callosum.api:main"
-corpus-ingest = "corpus_callosum.ingest:main"
-corpus-setup = "corpus_callosum.setup:main"
-corpus-ask = "corpus_callosum.cli:ask_main"
-corpus-flashcards = "corpus_callosum.cli:flashcards_main"
-corpus-collections = "corpus_callosum.cli:collections_main"
-corpus-convert = "corpus_callosum.convert:main"
+# MCP Server
+corpus-mcp-server = "mcp_server.server:main"
+
+# Individual Tool CLIs
+corpus-rag = "tools.rag.cli:main"
+corpus-flashcards = "tools.flashcards.cli:main"
+corpus-summaries = "tools.summaries.cli:main"
+corpus-quizzes = "tools.quizzes.cli:main"
+corpus-video = "tools.video.cli:main"
+
+# Orchestrations
+corpus-orchestrate = "orchestrations.cli:main"
+
+# Database management
+corpus-db = "db.management:main"
+
+# Security and configuration tools
+corpus-secrets = "utils.manage_secrets:main"
+corpus-api-keys = "utils.manage_keys:main"
 
 [tool.ruff]
 target-version = "py311"
@@ -91,7 +113,7 @@ ignore = [
 "tests/test_smoke.py" = ["E402"]  # imports after sys.path manipulation
 
 [tool.ruff.lint.isort]
-known-first-party = ["corpus_callosum"]
+known-first-party = ["config", "db", "llm", "mcp_server", "orchestrations", "tools", "utils"]
 
 [tool.ruff.format]
 quote-style = "double"

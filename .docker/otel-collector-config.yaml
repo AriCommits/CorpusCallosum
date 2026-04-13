@@ -1,3 +1,6 @@
+# OpenTelemetry Collector configuration for CorpusCallosum
+# Provides observability for the entire system
+
 receivers:
   otlp:
     protocols:
@@ -6,48 +9,68 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'corpus-mcp'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['corpus-mcp:8000']
+        - job_name: 'chromadb'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['chromadb:8000']
+        - job_name: 'ollama'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['ollama:11434']
+
 processors:
   batch:
-    timeout: 5s
-    send_batch_size: 100
+    timeout: 1s
+    send_batch_size: 1024
+    
+  memory_limiter:
+    limit_mib: 256
+    
+  resource:
+    attributes:
+      - key: service.namespace
+        value: corpuscallosum
+        action: upsert
 
 exporters:
-  # Debug exporter logs traces to console (useful for development)
-  debug:
-    verbosity: basic
-    sampling_initial: 5
-    sampling_thereafter: 200
-
-  # File exporter for persistent trace storage
-  # Traces are saved to /var/log/otel/traces.json
-  file/traces:
-    path: /var/log/otel/traces.json
-    rotation:
-      max_megabytes: 100
-      max_days: 7
-      max_backups: 3
-
-  # Prometheus metrics endpoint
+  # Logging for development
+  logging:
+    loglevel: info
+    
+  # Jaeger for distributed tracing
+  jaeger:
+    endpoint: jaeger:14250
+    tls:
+      insecure: true
+      
+  # Prometheus metrics
   prometheus:
-    endpoint: 0.0.0.0:8889
-
-  # Future: Add OTLP exporter to send to Jaeger, Tempo, or other backends
-  # otlp/jaeger:
-  #   endpoint: jaeger:4317
-  #   tls:
-  #     insecure: true
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      environment: docker
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [debug, file/traces]
+      processors: [memory_limiter, resource, batch]
+      exporters: [jaeger, logging]
+      
     metrics:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [prometheus]
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus, logging]
+      
     logs:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [debug]
+      processors: [memory_limiter, resource, batch]
+      exporters: [logging]
+
+  extensions: []
