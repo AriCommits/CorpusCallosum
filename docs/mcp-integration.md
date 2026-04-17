@@ -1,10 +1,10 @@
-# CorpusCallosum MCP Integration Guide
+# CorpusRAG MCP Integration Guide
 
-This guide covers how to integrate CorpusCallosum with AI agents through the Model Context Protocol (MCP), enabling programmatic access to all learning and knowledge management functionality.
+This guide covers how to integrate CorpusRAG with AI agents through the Model Context Protocol (MCP), enabling programmatic access to all learning and knowledge management functionality.
 
 ## Overview
 
-CorpusCallosum provides a comprehensive MCP server that exposes all CLI tools as callable functions, along with database resources and workflow prompts. This enables AI agents to:
+CorpusRAG provides a comprehensive MCP server that exposes all CLI tools as callable functions, along with database resources and workflow prompts. This enables AI agents to:
 
 - Ingest and query documents
 - Generate study materials (flashcards, summaries, quizzes)
@@ -14,9 +14,9 @@ CorpusCallosum provides a comprehensive MCP server that exposes all CLI tools as
 
 ## MCP Server Architecture
 
-The CorpusCallosum MCP server is built using **FastMCP** (FastAPI-based MCP implementation) and provides:
+The CorpusRAG MCP server is built using **FastMCP** (FastAPI-based MCP implementation) and provides:
 
-- **Tools**: All CorpusCallosum functionality exposed as callable functions
+- **Tools**: All CorpusRAG functionality exposed as callable functions
 - **Resources**: Database state and collection information
 - **Prompts**: Pre-built workflow templates for common learning tasks
 - **Health Endpoints**: Container orchestration and monitoring support
@@ -55,13 +55,13 @@ The CorpusCallosum MCP server is built using **FastMCP** (FastAPI-based MCP impl
 
 ```bash
 # Start with default settings
-corpus-mcp-server
+corpus-mcp
 
 # Custom configuration and port
-corpus-mcp-server --config production.yaml --port 9000
+corpus-mcp --config production.yaml --port 9000
 
 # Bind to specific host
-corpus-mcp-server --host localhost --port 8080
+corpus-mcp --host localhost --port 8080
 ```
 
 ### Command Line Options
@@ -80,8 +80,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - CC_DATABASE_HOST=chromadb
-      - CC_LLM_ENDPOINT=http://ollama:11434
+      - CORPUSRAG_DATABASE_HOST=chromadb
+      - CORPUSRAG_LLM_ENDPOINT=http://ollama:11434
     depends_on:
       - chromadb
       - ollama
@@ -115,7 +115,7 @@ The MCP server provides health endpoints for monitoring:
 
 ## MCP Tools
 
-All CorpusCallosum functionality is exposed as MCP tools with standardized JSON interfaces.
+All CorpusRAG functionality is exposed as MCP tools with standardized JSON interfaces.
 
 ### RAG Tools
 
@@ -631,17 +631,17 @@ video:
 
 ```bash
 # LLM Configuration
-CC_LLM_ENDPOINT=http://ollama:11434
-CC_LLM_MODEL=llama3
+CORPUSRAG_LLM_ENDPOINT=http://ollama:11434
+CORPUSRAG_LLM_MODEL=llama3
 
 # Database Configuration  
-CC_DATABASE_MODE=http
-CC_DATABASE_HOST=chromadb
-CC_DATABASE_PORT=8000
+CORPUSRAG_DATABASE_MODE=http
+CORPUSRAG_DATABASE_HOST=chromadb
+CORPUSRAG_DATABASE_PORT=8000
 
 # Performance tuning
-CC_RAG_CHUNKING_SIZE=1000
-CC_RAG_RETRIEVAL_TOP_K_FINAL=8
+CORPUSRAG_RAG_CHUNKING_SIZE=1000
+CORPUSRAG_RAG_RETRIEVAL_TOP_K_FINAL=8
 ```
 
 ### Client Configuration
@@ -877,4 +877,4 @@ def validate_api_key(key: str) -> bool:
     return key in get_valid_api_keys()
 ```
 
-This comprehensive MCP integration guide provides everything needed to integrate CorpusCallosum with AI agents, from basic setup to advanced patterns and security considerations.
+This comprehensive MCP integration guide provides everything needed to integrate CorpusRAG with AI agents, from basic setup to advanced patterns and security considerations.
