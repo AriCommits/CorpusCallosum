@@ -1,6 +1,5 @@
 """Test MCP server tools for proper implementation and validation."""
 
-import json
 import sys
 from pathlib import Path
 
@@ -9,8 +8,8 @@ import pytest
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from utils.validation import InputValidator, get_validator
 from utils.security import SecurityError
+from utils.validation import get_validator
 
 
 class TestInputValidation:

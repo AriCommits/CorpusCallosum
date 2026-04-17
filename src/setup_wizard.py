@@ -10,19 +10,14 @@ Guides new users through:
 6. Test ingest with demo query
 """
 
-import json
 import logging
-import subprocess
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
-import httpx
 import yaml
 from textual.app import ComposeResult, Screen
 from textual.containers import Container, Vertical
-from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Markdown, Select, Static
 
 # Configure logging
@@ -522,7 +517,7 @@ def run_setup_wizard() -> int:
         return 1
 
     print("\n✓ Setup complete!")
-    print(f"✓ Configuration saved to configs/base.yaml")
+    print("✓ Configuration saved to configs/base.yaml")
     print(f"✓ Vault created at {wizard.wizard_config.vault_path}")
 
     # Launch TUI if requested

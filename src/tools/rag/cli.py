@@ -1,13 +1,11 @@
 """CLI interface for RAG tool."""
 
-import re
 import sys
 from pathlib import Path
 
 import click
 
 from cli_common import load_cli_db
-from utils.security import SecurityError
 
 from .agent import RAGAgent
 from .config import RAGConfig
