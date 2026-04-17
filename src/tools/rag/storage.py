@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
 
 from langchain_core.documents import Document
 
@@ -42,7 +41,7 @@ class LocalFileStore:
         """
         return [self._load_document(key) for key in keys]
 
-    def get(self, key: str) -> Optional[Document]:
+    def get(self, key: str) -> Document | None:
         """Retrieve a single document.
 
         Args:
@@ -86,7 +85,7 @@ class LocalFileStore:
         }
         file_path.write_text(json.dumps(doc_data, indent=2, default=str), encoding="utf-8")
 
-    def _load_document(self, doc_id: str) -> Optional[Document]:
+    def _load_document(self, doc_id: str) -> Document | None:
         """Load a document from JSON.
 
         Args:

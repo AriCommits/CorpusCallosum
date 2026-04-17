@@ -9,7 +9,7 @@ import pytest
 
 from config.base import DatabaseConfig, LLMConfig
 from db import ChromaDBBackend
-from tools.rag import RAGConfig, RAGIngester, RAGAgent, RAGRetriever
+from tools.rag import RAGAgent, RAGConfig, RAGIngester, RAGRetriever
 
 
 @pytest.fixture

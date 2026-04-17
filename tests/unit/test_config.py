@@ -26,7 +26,7 @@ class TestLLMConfig:
         """Test default LLM config values."""
         config = LLMConfig()
         assert config.endpoint == "http://localhost:11434"
-        assert config.model == "llama3"
+        assert config.model == "gemma4:26b-a4b-it-q4_K_M"
         assert config.timeout_seconds == 120.0
         assert config.temperature == 0.7
         assert config.max_tokens is None
@@ -54,7 +54,7 @@ class TestEmbeddingConfig:
         """Test default embedding config values."""
         config = EmbeddingConfig()
         assert config.backend == "ollama"
-        assert config.model == "nomic-embed-text"
+        assert config.model == "embeddinggemma"
         assert config.dimensions is None
 
     def test_custom_values(self) -> None:
@@ -135,7 +135,7 @@ class TestBaseConfig:
         data = {"llm": {"model": "mistral"}}
         config = BaseConfig.from_dict(data)
         assert config.llm.model == "mistral"
-        assert config.llm.endpoint == "http://localhost:11434"  # default
+        assert config.llm.endpoint == "http://localhost:11434"  # from override
 
     def test_from_dict_complete(self) -> None:
         """Test creating config from complete dict."""
@@ -180,7 +180,7 @@ class TestBaseConfig:
         assert "embedding" in data
         assert "database" in data
         assert "paths" in data
-        assert data["llm"]["model"] == "llama3"
+        assert data["llm"]["model"] == "gemma4:26b-a4b-it-q4_K_M"
         assert isinstance(data["paths"]["vault"], str)
 
 
@@ -196,10 +196,10 @@ class TestDeepMerge:
 
     def test_merge_nested_dicts(self) -> None:
         """Test merging nested dictionaries."""
-        base = {"llm": {"model": "llama3", "temperature": 0.7}}
+        base = {"llm": {"model": "gemma4:26b-a4b-it-q4_K_M", "temperature": 0.7}}
         override = {"llm": {"temperature": 0.5}}
         result = deep_merge(base, override)
-        assert result == {"llm": {"model": "llama3", "temperature": 0.5}}
+        assert result == {"llm": {"model": "gemma4:26b-a4b-it-q4_K_M", "temperature": 0.5}}
 
     def test_merge_deep_nested(self) -> None:
         """Test merging deeply nested dictionaries."""
@@ -281,7 +281,7 @@ class TestLoadConfig:
         base_file = tmp_path / "base.yaml"
         tool_file = tmp_path / "tool.yaml"
 
-        base_data = {"llm": {"model": "llama3", "temperature": 0.7}}
+        base_data = {"llm": {"model": "gemma4:26b-a4b-it-q4_K_M", "temperature": 0.7}}
         tool_data = {"llm": {"temperature": 0.5}}
 
         with open(base_file, "w") as f:
@@ -290,13 +290,13 @@ class TestLoadConfig:
             yaml.dump(tool_data, f)
 
         config = load_config(tool_file, base_path=base_file)
-        assert config.llm.model == "llama3"  # from base
+        assert config.llm.model == "gemma4:26b-a4b-it-q4_K_M"  # from base
         assert config.llm.temperature == 0.5  # overridden
 
     def test_load_with_env_override(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test loading with environment variable override."""
         config_file = tmp_path / "config.yaml"
-        config_data = {"llm": {"model": "llama3"}}
+        config_data = {"llm": {"model": "gemma4:26b-a4b-it-q4_K_M"}}
         with open(config_file, "w") as f:
             yaml.dump(config_data, f)
 
@@ -316,6 +316,7 @@ class TestMergeConfigs:
     def test_merge_two_configs(self) -> None:
         """Test merging two BaseConfig instances."""
         base = BaseConfig()
+        base_endpoint = base.llm.endpoint
         override = BaseConfig()
         override.llm.model = "mistral"
         override.llm.temperature = 0.5
@@ -323,7 +324,7 @@ class TestMergeConfigs:
         result = merge_configs(base, override)
         assert result.llm.model == "mistral"
         assert result.llm.temperature == 0.5
-        assert result.llm.endpoint == "http://localhost:11434"  # from base
+        assert result.llm.endpoint == base_endpoint
 
 
 class TestConfigValidation:

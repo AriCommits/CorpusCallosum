@@ -6,7 +6,6 @@ from typing import Any
 from langchain_core.documents import Document
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
-
 HEADERS_TO_SPLIT = [
     ("#", "Document Title"),
     ("##", "Primary Section"),
