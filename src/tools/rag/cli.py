@@ -1,6 +1,7 @@
 """CLI interface for RAG tool."""
 
 import re
+import sys
 from pathlib import Path
 
 import click
@@ -212,6 +213,26 @@ def chat(collection: str, tag: tuple[str, ...], section: tuple[str, ...], config
 @click.option("--config", "-f", default="configs/base.yaml", help="Config file")
 def ui(collection: str, config: str):
     """Launch the Terminal User Interface."""
+    # Check if setup has been completed
+    marker_file = Path(".corpus_setup_complete")
+    if not marker_file.exists():
+        click.echo("Welcome to CorpusRAG!")
+        click.echo(
+            "It looks like this is your first time running the TUI.\n"
+            "Let's set up your configuration...\n"
+        )
+
+        # Run setup wizard
+        from setup_wizard import run_setup_wizard
+
+        exit_code = run_setup_wizard()
+        if exit_code != 0:
+            click.echo("Setup failed. Please run 'corpus setup' to try again.")
+            sys.exit(1)
+
+        click.echo("\nSetup complete! Launching TUI...\n")
+
+    # Launch the TUI
     cfg, db = load_cli_db(config, RAGConfig)
     agent = RAGAgent(cfg, db)
     app = RAGApp(agent, collection)
